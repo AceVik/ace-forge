@@ -63,7 +63,7 @@ public class AdventureDeckEditor extends FDeckEditor {
 
         @Override
         public boolean usePlayerInventory() {
-            return true;
+            return false;
         }
 
         @Override
@@ -88,9 +88,7 @@ public class AdventureDeckEditor extends FDeckEditor {
 
         @Override
         public ItemPool<PaperCard> getCardPool() {
-            ItemPool<PaperCard> pool = new ItemPool<>(PaperCard.class);
-            pool.addAll(Current.player().getCards());
-            return pool;
+            return FModel.getAllCards();
         }
 
         @Override
@@ -154,6 +152,18 @@ public class AdventureDeckEditor extends FDeckEditor {
         @Override
         public boolean hasCommander() {
             return false; // No commanders in the shop, even if player is in commander mode.
+        }
+
+        @Override
+        public boolean usePlayerInventory() {
+            return true;
+        }
+
+        @Override
+        public ItemPool<PaperCard> getCardPool() {
+            ItemPool<PaperCard> pool = new ItemPool<>(PaperCard.class);
+            pool.addAll(Current.player().getCards());
+            return pool;
         }
     }
 

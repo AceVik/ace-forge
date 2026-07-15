@@ -929,6 +929,23 @@ public class GameHUD extends Stage {
 
     @Override
     public boolean keyDown(int keycode) {
+        if (FModel.getPreferences().getPrefBoolean(FPref.CHEATS_ENABLED)) {
+            boolean ctrl = com.badlogic.gdx.Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)
+                    || com.badlogic.gdx.Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
+            boolean shift = com.badlogic.gdx.Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                    || com.badlogic.gdx.Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+            if (ctrl && shift) {
+                if (keycode == Input.Keys.G) {
+                    AdventurePlayer.current().giveGold(5000);
+                    addNotification("Cheated +5000 Gold!");
+                    return true;
+                } else if (keycode == Input.Keys.S) {
+                    AdventurePlayer.current().addShards(5000);
+                    addNotification("Cheated +5000 Shards!");
+                    return true;
+                }
+            }
+        }
         if (dialogOnlyInput) {
             return dialogInput(keycode);
         }

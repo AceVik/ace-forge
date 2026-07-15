@@ -216,6 +216,8 @@ public class ForgePreferences extends AbstractPreferences<ForgePreferences.FPref
         LEGACY_ORDER_COMBATANTS("false"),
 
         DEV_MODE_ENABLED ("false"),
+        CHEATS_ENABLED ("false"),
+        UNLOCK_ALL_CARDS ("true"),
         DEV_WORKSHOP_SYNTAX ("false"),
         DEV_LOG_ENTRY_TYPE (GameLogVerbosity.MEDIUM.name()),
         DEV_LOG_CUSTOM_TYPES (defaultCustomLogTypes()),

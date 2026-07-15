@@ -33,6 +33,10 @@ import com.github.tommyettinger.textra.TextraButton;
 import com.github.tommyettinger.textra.TextraLabel;
 import com.github.tommyettinger.textra.TypingLabel;
 
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import forge.model.FModel;
+import forge.localinstance.properties.ForgePreferences.FPref;
+
 import java.util.EnumSet;
 
 import forge.Forge;
@@ -166,6 +170,22 @@ public class GameHUD extends Stage {
         shards.setText("[%95][+Shards]");
         money.setText("[%95][+Gold]");
         lifePoints.setText("[%95][+Life]");
+        if (FModel.getPreferences().getPrefBoolean(FPref.CHEATS_ENABLED)) {
+            money.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    AdventurePlayer.current().giveGold(1000);
+                    GameHUD.this.addNotification("Cheated +1000 Gold!");
+                }
+            });
+            shards.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    AdventurePlayer.current().addShards(100);
+                    GameHUD.this.addNotification("Cheated +100 Shards!");
+                }
+            });
+        }
         enemyCounterText = Controls.newTypingLabel(Forge.getLocalizer().getMessage("lblRemainingEnemies", String.valueOf(0)));
         enemyCounterText.setColor(Color.BLACK);
         enemyCounterText.skipToTheEnd();

@@ -31,6 +31,7 @@ import forge.menu.FDropDownMenu;
 import forge.menu.FMenuItem;
 import forge.menu.FPopupMenu;
 import forge.model.FModel;
+import forge.localinstance.properties.ForgePreferences.FPref;
 import forge.toolbox.*;
 import forge.util.ItemPool;
 import forge.util.Localizer;
@@ -63,7 +64,8 @@ public class AdventureDeckEditor extends FDeckEditor {
 
         @Override
         public boolean usePlayerInventory() {
-            return false;
+            return !(FModel.getPreferences().getPrefBoolean(FPref.CHEATS_ENABLED)
+                    && FModel.getPreferences().getPrefBoolean(FPref.UNLOCK_ALL_CARDS));
         }
 
         @Override
@@ -88,7 +90,13 @@ public class AdventureDeckEditor extends FDeckEditor {
 
         @Override
         public ItemPool<PaperCard> getCardPool() {
-            return FModel.getAllCards();
+            if (FModel.getPreferences().getPrefBoolean(FPref.CHEATS_ENABLED)
+                    && FModel.getPreferences().getPrefBoolean(FPref.UNLOCK_ALL_CARDS)) {
+                return FModel.getAllCards();
+            }
+            ItemPool<PaperCard> pool = new ItemPool<>(PaperCard.class);
+            pool.addAll(Current.player().getCards());
+            return pool;
         }
 
         @Override

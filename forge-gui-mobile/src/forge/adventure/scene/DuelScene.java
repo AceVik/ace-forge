@@ -549,7 +549,8 @@ public class DuelScene extends ForgeScene {
     private static final String PLACEHOLDER_CONTRAPTION = "Automatic Fidget Spinner";
 
     private void applyAdventureDeckRules(DeckFormat format) {
-        if(FModel.getPreferences().getPrefBoolean(ForgePreferences.FPref.DEV_MODE_ENABLED)
+        if((FModel.getPreferences().getPrefBoolean(ForgePreferences.FPref.DEV_MODE_ENABLED)
+                || FModel.getPreferences().getPrefBoolean(ForgePreferences.FPref.CHEATS_ENABLED))
                 && !FModel.getPreferences().getPrefBoolean(ForgePreferences.FPref.ENFORCE_DECK_LEGALITY))
             return;
 

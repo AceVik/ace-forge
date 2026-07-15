@@ -226,7 +226,8 @@ public final class FModel {
             }
         }
 
-        ForgePreferences.DEV_MODE = getPreferences().getPrefBoolean(FPref.DEV_MODE_ENABLED);
+        ForgePreferences.DEV_MODE = getPreferences().getPrefBoolean(FPref.DEV_MODE_ENABLED)
+                || getPreferences().getPrefBoolean(FPref.CHEATS_ENABLED);
 
         getMagicDb().setStandardPredicate(getFormats().getStandard().getFilterRules());
         getMagicDb().setPioneerPredicate(getFormats().getPioneer().getFilterRules());

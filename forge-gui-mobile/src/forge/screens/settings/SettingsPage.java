@@ -371,6 +371,11 @@ public class SettingsPage extends TabPage<SettingsScreen> {
                     ForgePreferences.DEV_MODE = FModel.getPreferences().getPrefBoolean(FPref.DEV_MODE_ENABLED);
                 }
             }, 3);
+        if (FModel.getPreferences().getPrefBoolean(FPref.CHEATS_ENABLED)) {
+            lstSettings.addItem(new BooleanSetting(FPref.UNLOCK_ALL_CARDS,
+                "Unlock all cards (Adventure)",
+                "Unlock all cards for the adventure deck builder when cheats are enabled."), 3);
+        }
         lstSettings.addItem(new CustomSelectSetting(FPref.DEV_LOG_ENTRY_TYPE,
             Forge.getLocalizer().getMessage("cbpGameLogEntryType"),
             Forge.getLocalizer().getMessage("nlGameLogEntryType"),

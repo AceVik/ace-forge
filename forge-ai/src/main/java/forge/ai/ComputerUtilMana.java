@@ -129,7 +129,53 @@ public class ComputerUtilMana {
         return score;
     }
 
-    private static void sortManaAbilities(final ListMultimap<ManaCostShard, SpellAbility> sourcesForShards, final ListMultimap<Integer, SpellAbility> manaAbilityMap, final SpellAbility sa) {
+    public static boolean isFilterLand(Card card) {
+        if (!card.isLand()) {
+            return false;
+        }
+        for (SpellAbility sa : card.getSpellAbilities()) {
+            if (sa.isManaAbility()) {
+                CostPartMana costMana = sa.getPayCosts().getCostMana();
+                if (costMana != null && costMana.getMana() != null && !costMana.getMana().isZero()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static Set<Byte> getFilterLandProducedColors(Card card) {
+        Set<Byte> colors = new HashSet<>();
+        for (SpellAbility sa : card.getSpellAbilities()) {
+            if (sa.isManaAbility()) {
+                CostPartMana costMana = sa.getPayCosts().getCostMana();
+                if (costMana != null && costMana.getMana() != null && !costMana.getMana().isZero()) {
+                    AbilityManaPart m = sa.getManaPart();
+                    if (m != null) {
+                        String produced = m.getOrigProduced();
+                        if (produced.startsWith("Combo")) {
+                            for (String part : m.getComboColors(sa).split(" ")) {
+                                byte c = MagicColor.fromName(part);
+                                if (c != 0) {
+                                    colors.add(c);
+                                }
+                            }
+                        } else {
+                            for (String part : produced.split(" ")) {
+                                byte c = MagicColor.fromName(part);
+                                if (c != 0) {
+                                    colors.add(c);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return colors;
+    }
+
+    private static void sortManaAbilities(final ManaCostBeingPaid cost, final ListMultimap<ManaCostShard, SpellAbility> sourcesForShards, final ListMultimap<Integer, SpellAbility> manaAbilityMap, final SpellAbility sa) {
         final Map<Card, Integer> manaCardMap = Maps.newHashMap();
         final List<Card> orderedCards = Lists.newArrayList();
 
@@ -137,8 +183,23 @@ public class ComputerUtilMana {
             for (SpellAbility ability : sourcesForShards.get(shard)) {
                 final Card hostCard = ability.getHostCard();
                 if (!manaCardMap.containsKey(hostCard)) {
-                    // TODO +1 when reserved
-                    manaCardMap.put(hostCard, scoreManaProducingCard(hostCard));
+                    int score = scoreManaProducingCard(hostCard);
+                    if (isFilterLand(hostCard)) {
+                        Set<Byte> producedColors = getFilterLandProducedColors(hostCard);
+                        int matchCount = 0;
+                        for (ManaCostShard costShard : cost.getDistinctShards()) {
+                            for (byte color : producedColors) {
+                                if (costShard.canBePaidWithManaOfColor(color)) {
+                                    matchCount += cost.getUnpaidShards(costShard);
+                                    break;
+                                }
+                            }
+                        }
+                        if (matchCount >= 2) {
+                            score = -100; // Prioritize this filter land!
+                        }
+                    }
+                    manaCardMap.put(hostCard, score);
                     orderedCards.add(hostCard);
                 }
             }
@@ -862,7 +923,7 @@ public class ComputerUtilMana {
             }
         }
 
-        sortManaAbilities(sourcesForShards, manaAbilityMap, sa);
+        sortManaAbilities(cost, sourcesForShards, manaAbilityMap, sa);
         if (DEBUG_MANA_PAYMENT) {
             System.out.println("DEBUG_MANA_PAYMENT: sourcesForShards = " + sourcesForShards);
         }

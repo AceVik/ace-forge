@@ -29,6 +29,8 @@ public class ImageUtil {
         }
         if (imageKey.startsWith(ImageKeys.CARD_PREFIX))
             key = imageKey.substring(ImageKeys.CARD_PREFIX.length());
+        else if (imageKey.startsWith(ImageKeys.ADVENTURECARD_PREFIX))
+            key = imageKey.substring(ImageKeys.ADVENTURECARD_PREFIX.length());
         else
             return null;
         if (key.isEmpty())

@@ -119,6 +119,11 @@ public class EnemyData implements Serializable {
         return bossInsult;
     }
     public String getBossIntro(){
+        if (name != null && name.equalsIgnoreCase("AceVik")) {
+            String pattern = forge.Forge.getLocalizer().getMessage("bossAceVikIntro");
+            String playerName = Current.player().getName();
+            return pattern.replace("{PLAYERNAME}", playerName).replace("{SPIELERNAME}", playerName);
+        }
         return bossIntro;
     }
 

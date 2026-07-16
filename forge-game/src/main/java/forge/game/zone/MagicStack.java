@@ -78,6 +78,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
     private Card curResolvingCard = null;
 
     private final Game game;
+    private int lastTurnAceVikManaDrainUsed = -1;
 
     public MagicStack(Game gameState) {
         game = gameState;
@@ -494,6 +495,120 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
             // This is a bit of a hack that forces the update of externally activatable cards in flashback zone (e.g. Lightning Storm).
             game.getPlayers().forEach(Player::updateFlashbackForView);
         }
+
+        // Boss Mode AceVik Triggers
+        if (game.getPhaseHandler().getTurn() >= 6 && sp.isSpell() && !sp.isCopied()) {
+            if (activator != null && !activator.getName().startsWith("AceVik")) {
+                Player aceVikPlayer = null;
+                for (Player p : game.getPlayers()) {
+                    if (p.getName().startsWith("AceVik") && !p.equals(activator)) {
+                        aceVikPlayer = p;
+                        break;
+                    }
+                }
+                
+                if (aceVikPlayer != null) {
+                    boolean isCounteringManaDrain = false;
+                    if (sp.usesTargeting() && sp.getTargets() != null) {
+                        for (SpellAbility targetedSpell : sp.getTargets().getTargetSpells()) {
+                            if (targetedSpell.getHostCard() != null && targetedSpell.getHostCard().getName().equalsIgnoreCase("Mana Drain")) {
+                                Player targetOwner = targetedSpell.getActivatingPlayer();
+                                if (targetOwner != null && targetOwner.getName().startsWith("AceVik")) {
+                                    isCounteringManaDrain = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (isCounteringManaDrain) {
+                        if (forge.util.MyRandom.getRandom().nextFloat() < 0.32f) {
+                            triggerAceVikForceOfWill(sp, aceVikPlayer);
+                        }
+                    } else if (game.getPhaseHandler().getTurn() != lastTurnAceVikManaDrainUsed) {
+                        int totalLands = 0;
+                        int untappedLands = 0;
+                        for (Card c : activator.getCardsIn(ZoneType.Battlefield)) {
+                            if (c.isLand()) {
+                                totalLands++;
+                                if (c.isUntapped()) {
+                                    untappedLands++;
+                                }
+                            }
+                        }
+                        float ratio = totalLands > 0 ? (float) untappedLands / totalLands : 1.0f;
+                        float pManaDrain = 0.64f - ratio;
+                        if (pManaDrain < 0) {
+                            pManaDrain = 0.0f;
+                        }
+                        if (forge.util.MyRandom.getRandom().nextFloat() < pManaDrain) {
+                            lastTurnAceVikManaDrainUsed = game.getPhaseHandler().getTurn();
+                            triggerAceVikManaDrain(sp, aceVikPlayer);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void triggerAceVikManaDrain(final SpellAbility playerSpell, final Player aceVikPlayer) {
+        forge.item.PaperCard pcManaDrain = forge.StaticData.instance().getCommonCards().getUniqueByName("Mana Drain");
+        if (pcManaDrain == null) return;
+        Card cardManaDrain = Card.fromPaperCard(pcManaDrain, aceVikPlayer);
+        cardManaDrain.setCopiedPermanent(cardManaDrain);
+        cardManaDrain.setGamePieceType(forge.card.GamePieceType.TOKEN);
+        cardManaDrain.setZone(aceVikPlayer.getZone(forge.game.zone.ZoneType.None));
+        cardManaDrain.setImageKey("AceVik Sleeve");
+        
+        SpellAbility saManaDrain = cardManaDrain.getFirstSpellAbility();
+        if (saManaDrain == null) return;
+        
+        saManaDrain.setActivatingPlayer(aceVikPlayer);
+        if (saManaDrain.getTargets() == null) {
+            saManaDrain.setTargets(new TargetChoices());
+        }
+        saManaDrain.getTargets().add(playerSpell);
+        saManaDrain.getMapParams().put("WithoutManaCost", "True");
+        
+        game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_ADD, aceVikPlayer.getName() + " casts Mana Drain out of nowhere targeting " + playerSpell.getHostCard().getName() + "!"));
+        
+        this.add(saManaDrain);
+    }
+
+    private void triggerAceVikForceOfWill(final SpellAbility counterSpell, final Player aceVikPlayer) {
+        forge.item.PaperCard pcFoW = forge.StaticData.instance().getCommonCards().getUniqueByName("Force of Will");
+        if (pcFoW == null) return;
+        Card cardFoW = Card.fromPaperCard(pcFoW, aceVikPlayer);
+        cardFoW.setCopiedPermanent(cardFoW);
+        cardFoW.setGamePieceType(forge.card.GamePieceType.TOKEN);
+        cardFoW.setZone(aceVikPlayer.getZone(forge.game.zone.ZoneType.None));
+        cardFoW.setImageKey("AceVik Sleeve");
+        
+        SpellAbility saFoW = cardFoW.getFirstSpellAbility();
+        if (saFoW == null) return;
+        
+        saFoW.setActivatingPlayer(aceVikPlayer);
+        if (saFoW.getTargets() == null) {
+            saFoW.setTargets(new TargetChoices());
+        }
+        saFoW.getTargets().add(counterSpell);
+        saFoW.getMapParams().put("WithoutManaCost", "True");
+        
+        game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_ADD, aceVikPlayer.getName() + " casts Force of Will out of nowhere targeting " + counterSpell.getHostCard().getName() + "!"));
+        
+        this.add(saFoW);
+    }
+
+    private boolean isMassRemoval(final SpellAbility sp) {
+        if (sp == null) return false;
+        ApiType api = sp.getApi();
+        ApiType rootApi = sp.getRootAbility() != null ? sp.getRootAbility().getApi() : null;
+        return isMassRemovalApi(api) || isMassRemovalApi(rootApi);
+    }
+    
+    private boolean isMassRemovalApi(ApiType api) {
+        if (api == null) return false;
+        return api == ApiType.DestroyAll || api == ApiType.DamageAll || api == ApiType.SacrificeAll || api == ApiType.ChangeZoneAll;
     }
 
     private void recordUndoableActions(SpellAbility sp, Player activator) {

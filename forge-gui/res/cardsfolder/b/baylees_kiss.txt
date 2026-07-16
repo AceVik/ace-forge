@@ -1,0 +1,13 @@
+Name:Baylee's Kiss
+ManaCost:X
+Types:Legendary Instant Cat
+K:This spell can't be countered.
+A:SP$ Effect | ReplacementEffects$ DBYouCantLose,DBOppCantWin | SubAbility$ DBDelay | AILogic$ Fog | SpellDescription$ Until end of turn, you and your teammates can't lose the game and your opponents can't win the game. At the beginning of the next end step, your life total becomes 1 plus X, then return Baylee's Kiss to your sideboard.
+SVar:DBYouCantLose:Event$ GameLoss | ValidPlayer$ You,Teammate | Layer$ CantHappen | Description$ You and your teammates can't lose the game.
+SVar:DBOppCantWin:Event$ GameWin | ValidPlayer$ Opponent | Layer$ CantHappen | Secondary$ True | Description$ Your opponents can't win the game.
+SVar:DBDelay:DB$ DelayedTrigger | Mode$ Phase | Phase$ End of Turn | Execute$ DBSetLife | TriggerDescription$ At the beginning of the next end step, your life total becomes 1 plus X, then return Baylee's Kiss to your sideboard.
+SVar:DBSetLife:DB$ SetLife | Defined$ You | LifeAmount$ LifeTotal | SubAbility$ DBReturnToSideboard
+SVar:LifeTotal:SVar$X/Plus.1
+SVar:DBReturnToSideboard:DB$ ChangeZone | Defined$ Self | Origin$ Graveyard,Exile,Battlefield,Hand,Library,Stack | Destination$ Sideboard
+SVar:X:Count$CardValueX
+Oracle:This spell can't be countered.\nYou may cast Baylee's Kiss only from your sideboard, only once per game, and only when your life total becomes 0 or less.\nUntil end of turn, you and your teammates can't lose the game and your opponents can't win the game.\nAt the beginning of the next end step, your life total becomes 1 plus X, then return Baylee's Kiss to your sideboard.

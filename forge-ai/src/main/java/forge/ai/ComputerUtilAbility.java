@@ -418,14 +418,28 @@ public class ComputerUtilAbility {
             }
             // sort planeswalker abilities with most costly first
             if (sa.isPwAbility()) {
-                final CostPart cost = sa.getPayCosts().getCostParts().get(0);
-                if (cost instanceof CostRemoveCounter) {
-                    p += cost.convertAmount() == null ? 1 : cost.convertAmount();
-                } else if (cost instanceof CostPutCounter) {
-                    p -= cost.convertAmount();
-                }
-                if (sa.hasParam("Ultimate")) {
-                    p += 9;
+                if (sa.getHostCard().getName().equals("AceVik the Victorious")) {
+                    final CostPart cost = sa.getPayCosts().getCostParts().get(0);
+                    if (cost instanceof CostRemoveCounter) {
+                        int amount = cost.convertAmount() == null ? 1 : cost.convertAmount();
+                        if (amount == 16) {
+                            p += 25;
+                        } else {
+                            p -= 15;
+                        }
+                    } else if (cost instanceof CostPutCounter) {
+                        p += 15;
+                    }
+                } else {
+                    final CostPart cost = sa.getPayCosts().getCostParts().get(0);
+                    if (cost instanceof CostRemoveCounter) {
+                        p += cost.convertAmount() == null ? 1 : cost.convertAmount();
+                    } else if (cost instanceof CostPutCounter) {
+                        p -= cost.convertAmount();
+                    }
+                    if (sa.hasParam("Ultimate")) {
+                        p += 9;
+                    }
                 }
             }
 

@@ -1,0 +1,17 @@
+Name:Strong Team
+ManaCost:2 W U G
+Types:Enchantment Creature Human Dog Ally
+PT:4/7
+K:Flash
+K:Ward 4
+K:Vigilance
+K:Trample
+K:Haste
+K:Menace
+K:Prowess
+T:Mode$ ChangesZone | Origin$ Any | Destination$ Battlefield | ValidCard$ Card.Self,Ally.Other+YouCtrl | TriggerZones$ Battlefield | Execute$ DBTrigger | TriggerDescription$ Whenever Strong Team or another Ally enters the battlefield under your control, you may have Ally creatures you control gain flying and indestructible until end of turn. Create a Food token.
+SVar:DBTrigger:DB$ PumpAll | ValidCards$ Ally.YouCtrl | KW$ Flying | KW$ Indestructible | Optional$ True | SubAbility$ DBCreateFood
+SVar:DBCreateFood:DB$ Token | TokenAmount$ 1 | TokenName$ Food | TokenTypes$ Artifact,Food | TokenOwner$ You
+A:AB$ ChangeZone | Cost$ Sac<1/Food> | Origin$ Graveyard | Destination$ Battlefield | TriggerZones$ Graveyard | SubAbility$ DBMakeEnchantment | SpellDescription$ Return Strong Team from your graveyard to the battlefield under your control. It's an enchantment and isn't a creature.
+SVar:DBMakeEnchantment:DB$ Animate | Defined$ Self | Types$ Enchantment | RemoveCardTypes$ True | RemoveCreatureTypes$ True | Duration$ Permanent
+Oracle:Flash, ward {4}\nVigilance, trample, haste, menace, prowess\nWhenever Strong Team or another Ally enters the battlefield under your control, you may have Ally creatures you control gain flying and indestructible until end of turn. Create a Food token.\nSacrifice a Food token: Return Strong Team from your graveyard to the battlefield under your control. It's an enchantment and isn't a creature.

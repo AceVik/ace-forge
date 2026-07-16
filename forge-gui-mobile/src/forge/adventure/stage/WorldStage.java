@@ -132,11 +132,16 @@ public class WorldStage extends GameStage implements SaveFileContent {
                         SoundSystem.instance.play(SoundEffectType.ManaBurn, false);
                         DuelScene duelScene = DuelScene.instance();
                         FThreads.invokeInEdtNowOrLater(() -> {
+                            String enemyAtlasPath = mob.getAtlasPath();
+                            if (mob.getName().startsWith("AceVik")) {
+                                enemyAtlasPath = forge.localinstance.properties.ForgeConstants.ADVENTURE_COMMON_DIR + "sprites/enemy/humanoid/human/wizard/acevik_portrait.png";
+                            }
+                            final String finalPath = enemyAtlasPath;
                             Forge.setTransitionScreen(new TransitionScreen(() -> {
                                 collided = false;
                                 duelScene.initDuels(player, mob);
                                 Forge.switchScene(duelScene);
-                            }, ScreenUtil.getInstance().takeScreenshot(), true, false, false, false, "", Current.player().avatar(), mob.getAtlasPath(), Current.player().getName(), mob.getName()));
+                            }, ScreenUtil.getInstance().takeScreenshot(), true, false, false, false, "", Current.player().avatar(), finalPath, Current.player().getName(), mob.getName()));
                             currentMob = mob;
                             WorldSave.getCurrentSave().autoSave();
                         });
@@ -180,6 +185,95 @@ public class WorldStage extends GameStage implements SaveFileContent {
                     currentMob.resetCollisionHeight();
                     float deathDuration = currentMob.getActionAnimationDuration(CharacterSprite.AnimationTypes.Death, 0.3f);
                     startPause(deathDuration, () -> {
+                        if (currentMob.getName().startsWith("AceVik")) {
+                            int choice = MyRandom.getRandom().nextInt(3);
+                            List<String> landsToGive = new ArrayList<>();
+                            String landType = "";
+                            if (choice == 0) {
+                                landType = "Dual Lands";
+                                landsToGive.addAll(Arrays.asList(
+                                    "Tundra", "Underground Sea", "Badlands", "Taiga", "Savannah",
+                                    "Scrubland", "Volcanic Island", "Bayou", "Plateau", "Tropical Island"
+                                ));
+                            } else if (choice == 1) {
+                                landType = "Fetch Lands";
+                                landsToGive.addAll(Arrays.asList(
+                                    "Flooded Strand", "Polluted Delta", "Bloodstained Mire", "Wooded Foothills", "Windswept Heath",
+                                    "Marsh Flats", "Scalding Tarn", "Verdant Catacombs", "Arid Mesa", "Misty Rainforest"
+                                ));
+                            } else {
+                                landType = "Shock Lands";
+                                landsToGive.addAll(Arrays.asList(
+                                    "Hallowed Fountain", "Watery Grave", "Blood Crypt", "Stomping Ground", "Temple Garden",
+                                    "Godless Shrine", "Steam Vents", "Overgrown Tomb", "Sacred Foundry", "Breeding Pool"
+                                ));
+                            }
+                            
+                            com.badlogic.gdx.utils.Array<forge.adventure.util.Reward> lootList = new com.badlogic.gdx.utils.Array<>();
+                            lootList.add(new forge.adventure.util.Reward(32768));
+                            lootList.add(new forge.adventure.util.Reward(forge.adventure.util.Reward.Type.Shards, 16384));
+                            for (String landName : landsToGive) {
+                                forge.item.PaperCard C = forge.model.FModel.getMagicDb().getCommonCards().getCard(landName);
+                                if (C != null) {
+                                    lootList.add(new forge.adventure.util.Reward(C));
+                                }
+                            }
+                            float dropRate = forge.localinstance.properties.ForgePreferences.DEV_MODE ? 0.16f : 0.08f;
+                            if (MyRandom.getRandom().nextFloat() < dropRate) {
+                                forge.item.PaperCard planeswalkerCard = forge.model.FModel.getMagicDb().getCommonCards().getCard("AceVik the Victorious");
+                                if (planeswalkerCard != null) {
+                                    boolean alreadyHasCard = false;
+                                    forge.adventure.player.AdventurePlayer advPlayer = forge.adventure.player.AdventurePlayer.current();
+                                    if (advPlayer != null && advPlayer.getCards() != null) {
+                                        for (forge.item.PaperCard c : advPlayer.getCards().toFlatList()) {
+                                            if (c.getName().equals("AceVik the Victorious")) {
+                                                alreadyHasCard = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (!alreadyHasCard) {
+                                        lootList.add(new forge.adventure.util.Reward(planeswalkerCard));
+                                    }
+                                }
+                            }
+                            
+                            float kissDropRate = forge.localinstance.properties.ForgePreferences.DEV_MODE ? 0.18f : 0.09f;
+                            if (MyRandom.getRandom().nextFloat() < kissDropRate) {
+                                forge.item.PaperCard kissCard = forge.model.FModel.getMagicDb().getCommonCards().getCard("Baylee's Kiss");
+                                if (kissCard != null) {
+                                    boolean alreadyHasKiss = false;
+                                    forge.adventure.player.AdventurePlayer advPlayer = forge.adventure.player.AdventurePlayer.current();
+                                    if (advPlayer != null && advPlayer.getCards() != null) {
+                                        for (forge.item.PaperCard c : advPlayer.getCards().toFlatList()) {
+                                            if (c.getName().equals("Baylee's Kiss")) {
+                                                alreadyHasKiss = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (!alreadyHasKiss) {
+                                        lootList.add(new forge.adventure.util.Reward(kissCard));
+                                    }
+                                }
+                            }
+                            
+                            RewardScene.instance().loadRewards(lootList, RewardScene.Type.Loot, null);
+                            
+                            String defeatedMsg = forge.Forge.getLocalizer().getMessage("bossAceVikDefeated");
+                            String resultMsg = defeatedMsg + "\n\n" +
+                                    "Congratulations! You have permanently defeated AceVik and won the campaign!";
+                            forge.toolbox.FOptionPane.showMessageDialog(resultMsg, "AceVik Permanently Defeated!");
+                            WorldStage.this.removeEnemy(currentMob);
+                            
+                            AdventureQuestController.instance().updateQuestsWin(currentMob);
+                            AdventureQuestController.instance().showQuestDialogs(MapStage.getInstance());
+                            Forge.switchScene(RewardScene.instance());
+                            currentMob = null;
+                            return;
+                        }
+                        
+>>>>>>> 24b643be0a9 (Add custom cards Strong Team and Baylee's Kiss, update AceVik starting life, rewards, and custom card drop rates, and fix custom card image resolution bugs)
                         RewardScene.instance().loadRewards(currentMob.getRewards(), RewardScene.Type.Loot, null);
                         WorldStage.this.removeEnemy(currentMob);
                         AdventureQuestController.instance().updateQuestsWin(currentMob);
@@ -301,6 +395,13 @@ public class WorldStage extends GameStage implements SaveFileContent {
         if (list == null)
             return;
         EnemyData enemyData = data.getEnemy(1.0f);
+        float spawnChance = 0.08f;
+        if (forge.model.FModel.getPreferences().getPrefBoolean(FPref.CHEATS_ENABLED)) {
+            spawnChance = 0.16f;
+        }
+        if (enemyData != null && rand.nextFloat() < spawnChance) {
+            enemyData = getAceVikEnemyData();
+        }
         EnemyData extraSpawnForQuests = data.getExtraSpawnEnemy(1.0f);
         if (extraSpawnForQuests != null) {
             float spawnPicker = rand.nextFloat();
@@ -560,5 +661,21 @@ public class WorldStage extends GameStage implements SaveFileContent {
         {
             navArrow.setVisible(false);
         }
+    }
+
+    private EnemyData getAceVikEnemyData() {
+        EnemyData aceVik = new EnemyData();
+        aceVik.name = "AceVik";
+        aceVik.boss = true;
+        aceVik.life = 32;
+        aceVik.difficulty = 5.0f;
+        aceVik.speed = 35;
+        aceVik.scale = 0.5f;
+        aceVik.deck = new String[]{"decks/standard/Victory.dck"};
+        aceVik.sprite = "sprites/enemy/humanoid/human/wizard/archmage.atlas";
+        aceVik.questTags = new String[]{"Boss"};
+        aceVik.gamesPerMatch = 3;
+        aceVik.rewards = new RewardData[0];
+        return aceVik;
     }
 }

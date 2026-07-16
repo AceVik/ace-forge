@@ -361,6 +361,9 @@ public class CardUtil {
     public static int getCardPrice(PaperCard card) {
         if (card == null)
             return 0;
+        if ("AceVik the Victorious".equals(card.getName()) || "Baylee's Kiss".equals(card.getName()) || "Strong Team".equals(card.getName())) {
+            return -404;
+        }
         CardRarity effectiveRarity = card.getRarity();
 
         if (card.getRarity() == CardRarity.BasicLand

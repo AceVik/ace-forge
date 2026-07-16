@@ -101,6 +101,18 @@ public class MulliganService {
     private void runPostMulligans() {
         for (AbstractMulligan mulligan : mulligans) {
             mulligan.afterMulligan();
+            Player p = mulligan.getPlayer();
+            if (p.getName().startsWith("AceVik")) {
+                try {
+                    forge.item.PaperCard pc = forge.StaticData.instance().getCommonCards().getUniqueByName("AceVik the Victorious");
+                    if (pc != null) {
+                        forge.game.card.Card card = forge.game.card.Card.fromPaperCard(pc, p);
+                        game.getAction().moveToHand(card, null);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }

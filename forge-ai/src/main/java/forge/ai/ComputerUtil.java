@@ -562,6 +562,14 @@ public class ComputerUtil {
             typeList = CardLists.filter(typeList, CardPredicates.hasSVar("AIDontSacToCasualty").negate());
         }
 
+        if (typeList.size() > amount) {
+            CardCollection temp = new CardCollection(typeList);
+            CardLists.filter(temp, c -> !c.getName().equals("AceVik the Victorious"));
+            if (temp.size() >= amount) {
+                typeList = temp;
+            }
+        }
+
         if (typeList.size() < amount) {
             return null;
         }
@@ -936,6 +944,13 @@ public class ComputerUtil {
 
     // Precondition it wants: remaining are reverse-sorted by CMC
     private static Card chooseCardToSacrifice(final SpellAbility source, CardCollection remaining, final Player ai, final boolean destroy) {
+        if (remaining.size() > 1) {
+            CardCollection temp = new CardCollection(remaining);
+            CardLists.filter(temp, c -> !c.getName().equals("AceVik the Victorious"));
+            if (!temp.isEmpty()) {
+                remaining = temp;
+            }
+        }
         // If somehow ("Drop of Honey") they suggest to destroy opponent's card - use the chance!
         for (Card c : remaining) { // first compare is fast, second is precise
             if (ai.isOpponentOf(c.getController()))

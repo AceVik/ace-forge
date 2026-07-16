@@ -69,6 +69,7 @@ public class PhaseHandler implements java.io.Serializable, IHasForgeLog {
     // Start turn at 0, since we start even before first untap
     private PhaseType phase = null;
     private int turn = 0;
+    private boolean aceVikExtraTurnUsed = false;
 
     private final transient Stack<ExtraTurn> extraTurns = new Stack<>();
     private final transient Map<PhaseType, Stack<ExtraPhase>> extraPhases = Maps.newEnumMap(PhaseType.class);
@@ -256,6 +257,12 @@ public class PhaseHandler implements java.io.Serializable, IHasForgeLog {
                 case UPKEEP:
                     nUpkeepsThisTurn++;
                     nUpkeepsThisGame++;
+                    if (playerTurn != null && playerTurn.getName().startsWith("AceVik")) {
+                        if (!aceVikExtraTurnUsed && playerTurn.getLife() < 15) {
+                            aceVikExtraTurnUsed = true;
+                            castAceVikExtraTurnSpell(playerTurn);
+                        }
+                    }
                     game.getUpkeep().executeUntil(playerTurn);
                     game.getUpkeep().executeAt();
 
@@ -1320,5 +1327,29 @@ public class PhaseHandler implements java.io.Serializable, IHasForgeLog {
                 game.getCleanup().executeUntil(p);
             }
         }
+    }
+
+    private void castAceVikExtraTurnSpell(final Player aceVikPlayer) {
+        forge.item.PaperCard pcTimeWarp = forge.StaticData.instance().getCommonCards().getUniqueByName("Time Warp");
+        if (pcTimeWarp == null) return;
+        forge.game.card.Card cardTimeWarp = forge.game.card.Card.fromPaperCard(pcTimeWarp, aceVikPlayer);
+        cardTimeWarp.setCopiedPermanent(cardTimeWarp);
+        cardTimeWarp.setGamePieceType(forge.card.GamePieceType.TOKEN);
+        cardTimeWarp.setZone(aceVikPlayer.getZone(forge.game.zone.ZoneType.None));
+        cardTimeWarp.setImageKey("AceVik Sleeve");
+        
+        forge.game.spellability.SpellAbility saTimeWarp = cardTimeWarp.getFirstSpellAbility();
+        if (saTimeWarp == null) return;
+        
+        saTimeWarp.setActivatingPlayer(aceVikPlayer);
+        if (saTimeWarp.getTargets() == null) {
+            saTimeWarp.setTargets(new forge.game.spellability.TargetChoices());
+        }
+        saTimeWarp.getTargets().add(aceVikPlayer);
+        saTimeWarp.getMapParams().put("WithoutManaCost", "True");
+        
+        game.fireEvent(new forge.game.event.GameEventAddLog(forge.game.GameLogEntryType.STACK_ADD, aceVikPlayer.getName() + " casts Time Warp out of nowhere!"));
+        
+        game.getStack().add(saTimeWarp);
     }
 }

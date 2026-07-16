@@ -208,6 +208,7 @@ public class Player extends GameEntity implements Comparable<Player> {
     private NavigableMap<Long, Player> declaresBlockers = Maps.newTreeMap();
 
     private int crankCounter = 3;
+    private boolean hasUsedBayleesKiss = false;
 
     private PlayerStatistics stats = new PlayerStatistics();
 
@@ -2042,10 +2043,78 @@ public class Player extends GameEntity implements Comparable<Player> {
             }
         }
 
-        // Rule 704.5a -  If a player has 0 or less life, he or she loses the game.
         final boolean hasNoLife = getLife() <= 0;
-        if (hasNoLife && loseConditionMet(GameLossReason.LifeReachedZero, null)) {
-            return true;
+        if (hasNoLife) {
+            boolean hasKissInSideboard = false;
+            for (Card c : getCardsIn(ZoneType.Sideboard)) {
+                if (c.getName().equals("Baylee's Kiss")) {
+                    hasKissInSideboard = true;
+                    break;
+                }
+            }
+            if (hasKissInSideboard && !hasUsedBayleesKiss) {
+                if (getName().startsWith("AceVik")) {
+                    hasUsedBayleesKiss = true;
+                    int untappedLands = 0;
+                    for (Card c : getCardsIn(ZoneType.Battlefield)) {
+                        if (c.isLand() && c.isUntapped()) {
+                            untappedLands++;
+                        }
+                    }
+                    int maxX = untappedLands + getManaPool().totalMana();
+                    if (maxX > 0) {
+                        int toTap = maxX - getManaPool().totalMana();
+                        if (toTap > 0) {
+                            int tapped = 0;
+                            for (Card c : getCardsIn(ZoneType.Battlefield)) {
+                                if (c.isLand() && c.isUntapped()) {
+                                    c.setTapped(true);
+                                    tapped++;
+                                    if (tapped >= toTap) {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        getManaPool().clearPool(false);
+                    }
+                    this.setLife(1, null);
+                    this.castAceVikBayleesKiss(maxX);
+                    return false;
+                } else if (!isAI()) {
+                    if (this.getController().confirmAction(null, PlayerActionConfirmMode.OptionalChoose, "Would you like to cast Baylee's Kiss from your sideboard?", null)) {
+                        hasUsedBayleesKiss = true;
+                        int untappedLands = 0;
+                        for (Card c : getCardsIn(ZoneType.Battlefield)) {
+                            if (c.isLand() && c.isUntapped()) {
+                                untappedLands++;
+                            }
+                        }
+                        int maxX = untappedLands + getManaPool().totalMana();
+                        int chosenX = getController().chooseNumber(null, "Choose a value for X (X lands will be tapped to pay)", 0, maxX);
+                        int toTap = chosenX - getManaPool().totalMana();
+                        if (toTap > 0) {
+                            int tapped = 0;
+                            for (Card c : getCardsIn(ZoneType.Battlefield)) {
+                                if (c.isLand() && c.isUntapped()) {
+                                    c.setTapped(true);
+                                    tapped++;
+                                    if (tapped >= toTap) {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        getManaPool().clearPool(false);
+                        this.setLife(1, null);
+                        this.castAceVikBayleesKiss(chosenX);
+                        return false;
+                    }
+                }
+            }
+            if (loseConditionMet(GameLossReason.LifeReachedZero, null)) {
+                return true;
+            }
         }
 
         // Rule 704.5c - If a player has ten or more poison counters, he or she loses the game.
@@ -4095,5 +4164,29 @@ public class Player extends GameEntity implements Comparable<Player> {
 
     public boolean hasAllElementBend() {
         return elementalBendThisTurn.size() >= 4;
+    }
+
+    public void castAceVikBayleesKiss(final int xVal) {
+        PaperCard pcKiss = StaticData.instance().getCommonCards().getUniqueByName("Baylee's Kiss");
+        if (pcKiss == null) return;
+        Card cardKiss = Card.fromPaperCard(pcKiss, this);
+        cardKiss.setCopiedPermanent(cardKiss);
+        cardKiss.setGamePieceType(forge.card.GamePieceType.TOKEN);
+        cardKiss.setZone(this.getZone(ZoneType.None));
+        cardKiss.setImageKey("Baylee's Kiss");
+        
+        SpellAbility saKiss = cardKiss.getFirstSpellAbility();
+        if (saKiss == null) return;
+        
+        saKiss.setActivatingPlayer(this);
+        saKiss.getMapParams().put("WithoutManaCost", "True");
+        
+        saKiss.setSVar("X", String.valueOf(xVal));
+        cardKiss.setSVar("CardValueX", String.valueOf(xVal));
+        cardKiss.setSVar("X", String.valueOf(xVal));
+        
+        game.fireEvent(new GameEventAddLog(GameLogEntryType.STACK_ADD, this.getName() + " casts Baylee's Kiss from their sideboard (X = " + xVal + ")!"));
+        
+        game.getStack().add(saKiss);
     }
 }

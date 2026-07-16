@@ -45,6 +45,17 @@ public final class ImageKeys {
     private static String CACHE_CARD_PICS_DIR, CACHE_TOKEN_PICS_DIR, CACHE_ICON_PICS_DIR, CACHE_BOOSTER_PICS_DIR,
         CACHE_FATPACK_PICS_DIR, CACHE_BOOSTERBOX_PICS_DIR, CACHE_PRECON_PICS_DIR, CACHE_TOURNAMENTPACK_PICS_DIR;
     public static String ADVENTURE_CARD_PICS_DIR;
+    static {
+        String resPath = "./";
+        if (java.nio.file.Files.exists(java.nio.file.Paths.get("./res"))) {
+            resPath = "./";
+        } else if (java.nio.file.Files.exists(java.nio.file.Paths.get("./forge-gui/"))) {
+            resPath = "./forge-gui/";
+        } else if (java.nio.file.Files.exists(java.nio.file.Paths.get("../forge-gui"))) {
+            resPath = "../forge-gui/";
+        }
+        ADVENTURE_CARD_PICS_DIR = resPath + "/res/adventure/common/custom_card_pics/";
+    }
     private static Map<String, String> CACHE_CARD_PICS_SUBDIR;
 
     private static Map<String, Boolean> editionImageLookup = new HashMap<>();
@@ -102,6 +113,57 @@ public final class ImageKeys {
     public static File getImageFile(String key) {
         if (StringUtils.isEmpty(key))
             return null;
+
+        String lkey = key.toLowerCase();
+        if (lkey.contains("baylee")) {
+            File f = null;
+            if (ADVENTURE_CARD_PICS_DIR != null) {
+                f = new File(ADVENTURE_CARD_PICS_DIR, "Baylee's Kiss.jpg");
+            }
+            if (f == null || !f.exists()) {
+                f = new File("/Users/viktor/Projects/forge/forge-gui/res/adventure/common/custom_card_pics/Baylee's Kiss.jpg");
+            }
+            if (f.exists()) {
+                cachedCards.put(key, f);
+                cachedCards.put(lkey, f);
+                return f;
+            }
+        }
+        if (lkey.contains("acevik") && !lkey.contains("sleeve")) {
+            File f = null;
+            if (ADVENTURE_CARD_PICS_DIR != null) {
+                f = new File(ADVENTURE_CARD_PICS_DIR, "AceVik the Victorious.jpg");
+            }
+            if (f == null || !f.exists()) {
+                f = new File("/Users/viktor/Projects/forge/forge-gui/res/adventure/common/custom_card_pics/AceVik the Victorious.jpg");
+            }
+            if (f.exists()) {
+                cachedCards.put(key, f);
+                cachedCards.put(lkey, f);
+                return f;
+            }
+        }
+        if (lkey.contains("strong team") || lkey.contains("strong_team")) {
+            File f = null;
+            if (ADVENTURE_CARD_PICS_DIR != null) {
+                f = new File(ADVENTURE_CARD_PICS_DIR, "Strong Team.jpg");
+            }
+            if (f == null || !f.exists()) {
+                f = new File("/Users/viktor/Projects/forge/forge-gui/res/adventure/common/custom_card_pics/Strong Team.jpg");
+            }
+            if (f.exists()) {
+                cachedCards.put(key, f);
+                cachedCards.put(lkey, f);
+                return f;
+            }
+        }
+
+        if (key.contains("AceVik Sleeve") && ADVENTURE_CARD_PICS_DIR != null) {
+            File f = new File(ADVENTURE_CARD_PICS_DIR, "../sprites/enemy/humanoid/human/wizard/acevik_sleeve.png");
+            if (f.exists()) {
+                return f;
+            }
+        }
 
         final String dir;
         final String filename;

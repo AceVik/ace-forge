@@ -1124,7 +1124,16 @@ public class ChangeZoneAi extends SpellAbilityAi {
             Card choice = null;
 
             if (!list.isEmpty()) {
-                if (destination.equals(ZoneType.Battlefield) || origin.contains(ZoneType.Battlefield)) {
+                Card customPlaneswalker = null;
+                for (Card card : list) {
+                    if (card.getName().equals("AceVik the Victorious") && sa.canTarget(card)) {
+                        customPlaneswalker = card;
+                        break;
+                    }
+                }
+                if (customPlaneswalker != null) {
+                    choice = customPlaneswalker;
+                } else if (destination.equals(ZoneType.Battlefield) || origin.contains(ZoneType.Battlefield)) {
                     CardCollection originalList = new CardCollection(list);
                     boolean mustTargetFiltered = StaticAbilityMustTarget.filterMustTargetCards(ai, list, sa);
 

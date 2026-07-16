@@ -577,7 +577,11 @@ public class ComputerUtilCost {
             if (sa.isPwAbility()) {
                 for (final CostPart part : cost.getCostParts()) {
                     if (part instanceof CostRemoveCounter) {
-                        if (part.convertAmount() != null && part.convertAmount() == sa.getHostCard().getCurrentLoyalty()) {
+                        int amount = part.convertAmount() == null ? 0 : part.convertAmount();
+                        if (amount >= sa.getHostCard().getCurrentLoyalty()) {
+                            if (sa.getHostCard().getName().equals("AceVik the Victorious") || payer.getName().startsWith("AceVik")) {
+                                return false;
+                            }
                             // refuse to pay if opponent has no creature threats or
                             // 50% chance otherwise
                             if (payer.getOpponents().getCreaturesInPlay().isEmpty()

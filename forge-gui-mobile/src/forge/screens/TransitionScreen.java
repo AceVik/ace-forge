@@ -173,7 +173,22 @@ public class TransitionScreen extends FContainer {
                 float scale = screenW / 4;
                 float centerX = screenW / 2;
                 float centerY = screenH / 2;
-                enemyAvatar = Config.instance().getAtlas(enemyAtlasPath).createSprite("Avatar");
+                if (enemyAtlasPath.endsWith(".png")) {
+                    try {
+                        com.badlogic.gdx.files.FileHandle file = com.badlogic.gdx.Gdx.files.absolute(enemyAtlasPath);
+                        if (file.exists()) {
+                            enemyAvatar = new TextureRegion(new com.badlogic.gdx.graphics.Texture(file));
+                        } else {
+                            enemyAvatar = null;
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        enemyAvatar = null;
+                    }
+                } else {
+                    com.badlogic.gdx.graphics.g2d.Sprite sprite = Config.instance().getAtlas(enemyAtlasPath).createSprite("Avatar");
+                    enemyAvatar = sprite;
+                }
                 if (enemyAvatar != null)
                     enemyAvatar.flip(true, false);
                 float fontScale = GuiBase.isAndroid() ? 14f : 10f;

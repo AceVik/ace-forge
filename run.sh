@@ -4,6 +4,10 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd "$DIR" || exit 1
 
+echo "Pulling latest changes from fork (origin main)..."
+git pull --rebase origin main || echo "Warning: git pull failed, running with local version"
+
+
 JAR_PATH="forge-gui-mobile-dev/target/forge-gui-mobile-dev-2.0.14-SNAPSHOT-jar-with-dependencies.jar"
 REBUILD=false
 FORCE=false

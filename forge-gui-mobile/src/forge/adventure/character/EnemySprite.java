@@ -584,7 +584,7 @@ public class EnemySprite extends CharacterSprite implements Steerable<Vector2> {
             TextureRegion TR = new TextureRegion(T, 0, 0, 16, 16);
             batch.draw(TR, getX(), getY() + 16, 16, 16);
         }
-        if(effect != null){ //Draw a crown icon on top.
+        if(effect != null || (data != null && data.boss)){ //Draw a crown icon on top.
             Texture T = Current.world().getGlobalTexture();
             TextureRegion TR = new TextureRegion(T, 16, 0, 16, 16);
             batch.draw(TR, getX(), getY() + 16, 16*getScaleX(), 16*getScaleY());

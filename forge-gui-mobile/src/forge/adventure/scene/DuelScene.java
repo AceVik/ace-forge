@@ -445,7 +445,34 @@ public class DuelScene extends ForgeScene {
 
             LobbyPlayer enemyPlayer = GamePlayerUtil.createAiPlayer(currentEnemy.getName(), selectAI(currentEnemy.ai));
             enemyPlayer.setName(enemy.getName()); //Override name if defined in the map.(only supported for 1 enemy atm)
-            TextureRegion enemyAvatar = enemy.getAvatar(i);
+            TextureRegion enemyAvatar;
+            if (currentEnemy.getName().startsWith("AceVik")) {
+                try {
+                    String portraitPath = forge.localinstance.properties.ForgeConstants.ADVENTURE_COMMON_DIR + "sprites/enemy/humanoid/human/wizard/acevik_portrait.png";
+                    com.badlogic.gdx.files.FileHandle file = com.badlogic.gdx.Gdx.files.absolute(portraitPath);
+                    if (file.exists()) {
+                        enemyAvatar = new TextureRegion(new com.badlogic.gdx.graphics.Texture(file));
+                    } else {
+                        enemyAvatar = enemy.getAvatar(i);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    enemyAvatar = enemy.getAvatar(i);
+                }
+                try {
+                    String sleevePath = forge.localinstance.properties.ForgeConstants.ADVENTURE_COMMON_DIR + "sprites/enemy/humanoid/human/wizard/acevik_sleeve.png";
+                    com.badlogic.gdx.files.FileHandle file = com.badlogic.gdx.Gdx.files.absolute(sleevePath);
+                    if (file.exists()) {
+                        TextureRegion enemySleeve = new TextureRegion(new com.badlogic.gdx.graphics.Texture(file));
+                        FSkin.getSleeves().put(99999, enemySleeve);
+                        enemyPlayer.setSleeveIndex(99999);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else {
+                enemyAvatar = enemy.getAvatar(i);
+            }
             enemyAvatar.flip(true, false); //flip facing left
             FSkin.getAvatars().put(enemyAvatarKey + i, enemyAvatar);
             enemyPlayer.setAvatarIndex(enemyAvatarKey + i);

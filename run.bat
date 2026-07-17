@@ -14,23 +14,29 @@ set "FORCE=false"
 set "SET_LANG="
 set "DEBUG=false"
 set "CHEATS=false"
-set "PREFS_FILE=%LOCALAPPDATA%\Forge\preferences\forge.preferences"
+set "PREFS_FILE=%APPDATA%\Forge\preferences\forge.preferences"
 
-:: Parse arguments
+:: Parse arguments and preserve other flags
+set "ARGS="
 :parse_args
 if "%~1"=="" goto done_args
-if "%~1"=="--force" set "FORCE=true"
-if "%~1"=="-f" set "FORCE=true"
-if "%~1"=="--english" set "SET_LANG=en-US"
-if "%~1"=="-en" set "SET_LANG=en-US"
-if "%~1"=="-e" set "SET_LANG=en-US"
-if "%~1"=="--german" set "SET_LANG=de-DE"
-if "%~1"=="-de" set "SET_LANG=de-DE"
-if "%~1"=="-g" set "SET_LANG=de-DE"
-if "%~1"=="--debug" set "DEBUG=true"
-if "%~1"=="-d" set "DEBUG=true"
-if "%~1"=="--cheats" set "CHEATS=true"
-if "%~1"=="-c" set "CHEATS=true"
+set "is_control_flag=false"
+if "%~1"=="--force" (set "FORCE=true" & set "is_control_flag=true")
+if "%~1"=="-f" (set "FORCE=true" & set "is_control_flag=true")
+if "%~1"=="--english" (set "SET_LANG=en-US" & set "is_control_flag=true")
+if "%~1"=="-en" (set "SET_LANG=en-US" & set "is_control_flag=true")
+if "%~1"=="-e" (set "SET_LANG=en-US" & set "is_control_flag=true")
+if "%~1"=="--german" (set "SET_LANG=de-DE" & set "is_control_flag=true")
+if "%~1"=="-de" (set "SET_LANG=de-DE" & set "is_control_flag=true")
+if "%~1"=="-g" (set "SET_LANG=de-DE" & set "is_control_flag=true")
+if "%~1"=="--debug" (set "DEBUG=true" & set "is_control_flag=true")
+if "%~1"=="-d" (set "DEBUG=true" & set "is_control_flag=true")
+if "%~1"=="--cheats" (set "CHEATS=true" & set "is_control_flag=true")
+if "%~1"=="-c" (set "CHEATS=true" & set "is_control_flag=true")
+
+if "!is_control_flag!"=="false" (
+    set "ARGS=!ARGS! %1"
+)
 shift
 goto parse_args
 :done_args
@@ -102,4 +108,4 @@ set "JAVA_OPTS=%JAVA_OPTS% -Dio.netty.tryReflectionSetAccessible=true"
 set "JAVA_OPTS=%JAVA_OPTS% -Dfile.encoding=UTF-8"
 
 cd forge-gui-mobile-dev
-java %JAVA_OPTS% -jar target/forge-gui-mobile-dev-2.0.14-SNAPSHOT-jar-with-dependencies.jar
+java %JAVA_OPTS% -jar target/forge-gui-mobile-dev-2.0.14-SNAPSHOT-jar-with-dependencies.jar %ARGS%

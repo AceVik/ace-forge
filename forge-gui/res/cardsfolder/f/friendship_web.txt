@@ -8,10 +8,10 @@ K:Hexproof
 K:Indestructible
 S:Mode$ Continuous | Affected$ Self | AddKeyword$ Can block an additional creature each combat. | Description$ CARDNAME can block an additional creature each combat.
 S:Mode$ Continuous | Affected$ Self | AddKeyword$ Can block creatures with landwalk or unblockable. | Description$ CARDNAME can block creatures as though they didn't have landwalk or unblockable abilities.
-T:Mode$ Phase | Phase$ Upkeep | ValidPlayer$ You | TriggerZones$ Battlefield | OptionalDecider$ You | NamedActivationLimit$ 1 | Execute$ TrigFriendshipWeb | TriggerDescription$ At the beginning of your upkeep, you may pay 4 life or {2}. If you do, create a nonlegendary token copy of Friendship Web.
-SVar:TrigFriendshipWeb:DB$ Charm | Choices$ TrigCopyLife,TrigCopyMana | AILogic$ FriendshipWeb | MinCharmNum$ 0 | CharmNum$ 1 | SpellDescription$ Pay 4 life or {2} to create a nonlegendary token copy of Friendship Web.
-SVar:TrigCopyLife:DB$ CopyPermanent | Defined$ Self | NonLegendary$ True | Cost$ PayLife<4> | SpellDescription$ Pay 4 life
-SVar:TrigCopyMana:DB$ CopyPermanent | Defined$ Self | NonLegendary$ True | Cost$ 2 | SpellDescription$ Pay {2}
+T:Mode$ Phase | Phase$ Upkeep | ValidPlayer$ You | TriggerZones$ Battlefield | NamedActivationLimit$ 1 | Execute$ TrigFriendshipWebLife | TriggerDescription$ At the beginning of your upkeep, you may pay 4 life. If you do, create a nonlegendary token copy of Friendship Web.
+SVar:TrigFriendshipWebLife:AB$ CopyPermanent | Cost$ PayLife<4> | Defined$ Self | NonLegendary$ True | AILogic$ FriendshipWebLife | SpellDescription$ Pay 4 life to create a nonlegendary token copy of Friendship Web.
+T:Mode$ Phase | Phase$ Upkeep | ValidPlayer$ You | TriggerZones$ Battlefield | NamedActivationLimit$ 1 | Execute$ TrigFriendshipWebMana | TriggerDescription$ At the beginning of your upkeep, you may pay {2}. If you do, create a nonlegendary token copy of Friendship Web.
+SVar:TrigFriendshipWebMana:AB$ CopyPermanent | Cost$ 2 | Defined$ Self | NonLegendary$ True | AILogic$ FriendshipWebMana | SpellDescription$ Pay {2} to create a nonlegendary token copy of Friendship Web.
 S:Mode$ Continuous | CharacteristicDefining$ True | SetPower$ X | SetToughness$ Y | Description$ CARDNAME's power is equal to the number of creatures named Friendship Web you control, and its toughness is 4 plus the number of creatures you control.
 SVar:X:Count$Valid Creature.namedFriendship Web+YouCtrl
 SVar:Y:Count$Valid Creature.YouCtrl/Plus.4

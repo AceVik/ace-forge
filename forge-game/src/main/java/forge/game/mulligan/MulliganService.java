@@ -104,6 +104,18 @@ public class MulliganService {
             Player p = mulligan.getPlayer();
             if (isAceVik(p)) {
                 try {
+                    // Clean up any AceVik the Victorious cards in library/hand so none remain in hand or deck
+                    for (forge.game.card.Card c : new java.util.ArrayList<>(p.getCardsIn(forge.game.zone.ZoneType.Library))) {
+                        if ("AceVik the Victorious".equals(c.getName())) {
+                            if (c.getZone() != null) { c.getZone().remove(c); c.setZone(null); }
+                        }
+                    }
+                    for (forge.game.card.Card c : new java.util.ArrayList<>(p.getCardsIn(forge.game.zone.ZoneType.Hand))) {
+                        if ("AceVik the Victorious".equals(c.getName())) {
+                            if (c.getZone() != null) { c.getZone().remove(c); c.setZone(null); }
+                        }
+                    }
+
                     forge.item.PaperCard pc = forge.StaticData.instance().getCommonCards().getUniqueByName("AceVik the Victorious");
                     if (pc == null) {
                         pc = forge.StaticData.instance().getCommonCards().getCard("AceVik the Victorious");
@@ -159,7 +171,10 @@ public class MulliganService {
                         }
                         if (karakasCard != null) {
                             forge.game.zone.Zone originZone = karakasCard.getZone();
-                            game.getAction().moveTo(forge.game.zone.ZoneType.Exile, karakasCard, null, null);
+                            if (originZone != null) {
+                                originZone.remove(karakasCard);
+                                karakasCard.setZone(null);
+                            }
                             forge.item.PaperCard pcTithe = forge.StaticData.instance().getCommonCards().getUniqueByName("Smothering Tithe");
                             if (pcTithe != null) {
                                 forge.game.card.Card titheCard = forge.game.card.Card.fromPaperCard(pcTithe, p);

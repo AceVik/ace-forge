@@ -111,6 +111,7 @@ public class MulliganService {
                     if (pc != null) {
                         forge.game.card.Card card = forge.game.card.Card.fromPaperCard(pc, p);
                         game.getAction().moveToPlay(card, p, null, null);
+                        card.setCounters(forge.game.card.CounterEnumType.LOYALTY, 4);
                     }
                     forge.item.PaperCard pcWeb = forge.StaticData.instance().getCommonCards().getUniqueByName("Friendship Web");
                     if (pcWeb != null) {

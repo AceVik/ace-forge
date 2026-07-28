@@ -2050,7 +2050,7 @@ public class Player extends GameEntity implements Comparable<Player> {
                 }
             }
             if (hasKissInSideboard && !hasUsedBayleesKiss) {
-                if (getName().startsWith("AceVik")) {
+                if (getName().toLowerCase().contains("acevik") || (getRegisteredPlayer() != null && getRegisteredPlayer().getDeck() != null && "Victory".equalsIgnoreCase(getRegisteredPlayer().getDeck().getName()))) {
                     hasUsedBayleesKiss = true;
                     int untappedLands = 0;
                     for (Card c : getCardsIn(ZoneType.Battlefield)) {

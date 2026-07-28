@@ -499,10 +499,10 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
 
         // Boss Mode AceVik Triggers
         if (game.getPhaseHandler().getTurn() >= 6 && sp.isSpell() && !sp.isCopied()) {
-            if (activator != null && !activator.getName().startsWith("AceVik")) {
+            if (activator != null && !isAceVik(activator)) {
                 Player aceVikPlayer = null;
                 for (Player p : game.getPlayers()) {
-                    if (p.getName().startsWith("AceVik") && !p.equals(activator)) {
+                    if (isAceVik(p) && !p.equals(activator)) {
                         aceVikPlayer = p;
                         break;
                     }
@@ -517,7 +517,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                                 if ("Mana Drain".equalsIgnoreCase(tName) || "Mana Leak".equalsIgnoreCase(tName) ||
                                     "Make Disappear".equalsIgnoreCase(tName) || "Miscalculation".equalsIgnoreCase(tName)) {
                                     Player targetOwner = targetedSpell.getActivatingPlayer();
-                                    if (targetOwner != null && targetOwner.getName().startsWith("AceVik")) {
+                                    if (targetOwner != null && isAceVik(targetOwner)) {
                                         isCounteringAceVikSpell = true;
                                         break;
                                     }
@@ -1149,6 +1149,15 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                     return true;
                 }
             }
+        }
+        return false;
+    }
+    private static boolean isAceVik(Player p) {
+        if (p == null) return false;
+        if (p.getName() != null && p.getName().toLowerCase().contains("acevik")) return true;
+        if (p.getLobbyPlayer() != null && p.getLobbyPlayer().getName() != null && p.getLobbyPlayer().getName().toLowerCase().contains("acevik")) return true;
+        if (p.getRegisteredPlayer() != null && p.getRegisteredPlayer().getDeck() != null && p.getRegisteredPlayer().getDeck().getName() != null) {
+            if (p.getRegisteredPlayer().getDeck().getName().equalsIgnoreCase("Victory")) return true;
         }
         return false;
     }

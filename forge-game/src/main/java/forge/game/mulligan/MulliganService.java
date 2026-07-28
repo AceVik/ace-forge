@@ -104,11 +104,6 @@ public class MulliganService {
             Player p = mulligan.getPlayer();
             if (p.getName().startsWith("AceVik")) {
                 try {
-                    forge.item.PaperCard pc = forge.StaticData.instance().getCommonCards().getUniqueByName("AceVik the Victorious");
-                    if (pc != null) {
-                        forge.game.card.Card card = forge.game.card.Card.fromPaperCard(pc, p);
-                        game.getAction().moveToPlay(card, p, null, null);
-                    }
                     forge.item.PaperCard pcWeb = forge.StaticData.instance().getCommonCards().getUniqueByName("Friendship Web");
                     if (pcWeb != null) {
                         forge.game.card.Card cardWeb = forge.game.card.Card.fromPaperCard(pcWeb, p);

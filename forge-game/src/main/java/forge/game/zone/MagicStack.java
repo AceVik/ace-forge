@@ -508,21 +508,26 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                 }
                 
                 if (aceVikPlayer != null) {
-                    boolean isCounteringManaDrain = false;
+                    boolean isCounteringAceVikSpell = false;
                     if (sp.usesTargeting() && sp.getTargets() != null) {
                         for (SpellAbility targetedSpell : sp.getTargets().getTargetSpells()) {
-                            if (targetedSpell.getHostCard() != null && targetedSpell.getHostCard().getName().equalsIgnoreCase("Mana Drain")) {
-                                Player targetOwner = targetedSpell.getActivatingPlayer();
-                                if (targetOwner != null && targetOwner.getName().startsWith("AceVik")) {
-                                    isCounteringManaDrain = true;
-                                    break;
+                            if (targetedSpell.getHostCard() != null) {
+                                String tName = targetedSpell.getHostCard().getName();
+                                if ("Mana Drain".equalsIgnoreCase(tName) || "Mana Leak".equalsIgnoreCase(tName) ||
+                                    "Make Disappear".equalsIgnoreCase(tName) || "Miscalculation".equalsIgnoreCase(tName)) {
+                                    Player targetOwner = targetedSpell.getActivatingPlayer();
+                                    if (targetOwner != null && targetOwner.getName().startsWith("AceVik")) {
+                                        isCounteringAceVikSpell = true;
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
                     
-                    if (isCounteringManaDrain) {
-                        if (forge.util.MyRandom.getRandom().nextFloat() < 0.32f) {
+                    if (isCounteringAceVikSpell) {
+                        float fowProb = 0.06f;
+                        if (forge.util.MyRandom.getRandom().nextFloat() < fowProb) {
                             triggerAceVikForceOfWill(sp, aceVikPlayer);
                         }
                     } else if (game.getPhaseHandler().getTurn() != lastTurnAceVikManaDrainUsed) {
@@ -537,13 +542,13 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                             }
                         }
                         float ratio = totalLands > 0 ? (float) untappedLands / totalLands : 1.0f;
-                        float pManaDrain = 0.64f - ratio;
-                        if (pManaDrain < 0) {
-                            pManaDrain = 0.0f;
+                        float pCounter = 0.64f - ratio;
+                        if (pCounter < 0) {
+                            pCounter = 0.0f;
                         }
-                        if (forge.util.MyRandom.getRandom().nextFloat() < pManaDrain) {
+                        if (forge.util.MyRandom.getRandom().nextFloat() < pCounter) {
                             lastTurnAceVikManaDrainUsed = game.getPhaseHandler().getTurn();
-                            triggerAceVikManaDrain(sp, aceVikPlayer);
+                            triggerAceVikRandomCounter(sp, aceVikPlayer);
                         }
                     }
                 }
@@ -551,28 +556,43 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         }
     }
 
-    private void triggerAceVikManaDrain(final SpellAbility playerSpell, final Player aceVikPlayer) {
-        forge.item.PaperCard pcManaDrain = forge.StaticData.instance().getCommonCards().getUniqueByName("Mana Drain");
-        if (pcManaDrain == null) return;
-        Card cardManaDrain = Card.fromPaperCard(pcManaDrain, aceVikPlayer);
-        cardManaDrain.setCopiedPermanent(cardManaDrain);
-        cardManaDrain.setGamePieceType(forge.card.GamePieceType.TOKEN);
-        cardManaDrain.setZone(aceVikPlayer.getZone(forge.game.zone.ZoneType.None));
-        cardManaDrain.setImageKey("AceVik Sleeve");
-        
-        SpellAbility saManaDrain = cardManaDrain.getFirstSpellAbility();
-        if (saManaDrain == null) return;
-        
-        saManaDrain.setActivatingPlayer(aceVikPlayer);
-        if (saManaDrain.getTargets() == null) {
-            saManaDrain.setTargets(new TargetChoices());
+    private void triggerAceVikRandomCounter(final SpellAbility playerSpell, final Player aceVikPlayer) {
+        String[] pool = new String[] { "Make Disappear", "Mana Leak", "Miscalculation", "Mana Drain" };
+        float r = forge.util.MyRandom.getRandom().nextFloat();
+        String counterName;
+        if (r < 0.35f) {
+            counterName = "Make Disappear";
+        } else if (r < 0.65f) {
+            counterName = "Mana Leak";
+        } else if (r < 0.85f) {
+            counterName = "Miscalculation";
+        } else {
+            counterName = "Mana Drain";
         }
-        saManaDrain.getTargets().add(playerSpell);
-        saManaDrain.getMapParams().put("WithoutManaCost", "True");
+
+        forge.item.PaperCard pcCounter = forge.StaticData.instance().getCommonCards().getUniqueByName(counterName);
+        if (pcCounter == null) pcCounter = forge.StaticData.instance().getCommonCards().getUniqueByName("Mana Leak");
+        if (pcCounter == null) return;
         
-        game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_ADD, aceVikPlayer.getName() + " casts Mana Drain out of nowhere targeting " + playerSpell.getHostCard().getName() + "!"));
+        Card cardCounter = Card.fromPaperCard(pcCounter, aceVikPlayer);
+        cardCounter.setCopiedPermanent(cardCounter);
+        cardCounter.setGamePieceType(forge.card.GamePieceType.TOKEN);
+        cardCounter.setZone(aceVikPlayer.getZone(forge.game.zone.ZoneType.None));
+        cardCounter.setImageKey("AceVik Sleeve");
         
-        this.add(saManaDrain);
+        SpellAbility saCounter = cardCounter.getFirstSpellAbility();
+        if (saCounter == null) return;
+        
+        saCounter.setActivatingPlayer(aceVikPlayer);
+        if (saCounter.getTargets() == null) {
+            saCounter.setTargets(new TargetChoices());
+        }
+        saCounter.getTargets().add(playerSpell);
+        saCounter.getMapParams().put("WithoutManaCost", "True");
+        
+        game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_ADD, aceVikPlayer.getName() + " casts " + counterName + " out of nowhere targeting " + playerSpell.getHostCard().getName() + "!"));
+        
+        this.add(saCounter);
     }
 
     private void triggerAceVikForceOfWill(final SpellAbility counterSpell, final Player aceVikPlayer) {

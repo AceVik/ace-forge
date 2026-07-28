@@ -25,6 +25,13 @@ public class CharmAi extends SpellAbilityAi {
     @Override
     protected AiAbilityDecision checkApiLogic(Player ai, SpellAbility sa) {
         final Card source = sa.getHostCard();
+        if (source != null && "AceVik the Victorious".equals(source.getName())) {
+            if (sa.isPwAbility() && !sa.hasParam("Ultimate")) {
+                if (source.getCounters(forge.game.card.CounterEnumType.LOYALTY) < 16) {
+                    return new AiAbilityDecision(0, AiPlayDecision.CantPlayAi);
+                }
+            }
+        }
         List<AbilitySub> choices = CharmEffect.makePossibleOptions(sa);
 
         final int num;
@@ -392,6 +399,7 @@ public class CharmAi extends SpellAbilityAi {
 
             if (MyRandom.getRandom().nextDouble() < prob) {
                 chosenList.add(optionLife);
+                sa.setChosenList(chosenList);
                 return chosenList;
             }
         }
@@ -400,11 +408,19 @@ public class CharmAi extends SpellAbilityAi {
         if (optionMana != null) {
             if (ComputerUtilMana.canPayManaCost(optionMana, ai, 0, true)) {
                 chosenList.add(optionMana);
+                sa.setChosenList(chosenList);
                 return chosenList;
             }
         }
 
-        // 3. Otherwise decline (returns empty chosenList)
+        // 3. Fallback to life option if life > 4 (when mana couldn't be paid or life roll missed)
+        if (optionLife != null && life > 4) {
+            chosenList.add(optionLife);
+            sa.setChosenList(chosenList);
+            return chosenList;
+        }
+
+        sa.setChosenList(chosenList);
         return chosenList;
     }
 

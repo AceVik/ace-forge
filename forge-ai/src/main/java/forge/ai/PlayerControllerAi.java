@@ -1041,8 +1041,8 @@ public class PlayerControllerAi extends PlayerController {
          * account for probabilistic choices that may result in different
          * results in subsequent calls.
          */
-        if (sa.getChosenList() == null) {
-            getAi().doTrigger(sa, true);
+        if (sa.getChosenList() == null || sa.getChosenList().isEmpty()) {
+            SpellApiToAi.Converter.get(sa).checkApiLogic(player, sa);
         }
         return sa.getChosenList();
     }

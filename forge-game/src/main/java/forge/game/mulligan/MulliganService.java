@@ -144,10 +144,22 @@ public class MulliganService {
 
     private boolean isAceVik(Player p) {
         if (p == null) return false;
+        if (!p.isAI()) return false;
         if (p.getName() != null && p.getName().toLowerCase().contains("acevik")) return true;
         if (p.getLobbyPlayer() != null && p.getLobbyPlayer().getName() != null && p.getLobbyPlayer().getName().toLowerCase().contains("acevik")) return true;
-        if (p.getRegisteredPlayer() != null && p.getRegisteredPlayer().getDeck() != null && p.getRegisteredPlayer().getDeck().getName() != null) {
-            if (p.getRegisteredPlayer().getDeck().getName().equalsIgnoreCase("Victory")) return true;
+        if (p.getRegisteredPlayer() != null && p.getRegisteredPlayer().getDeck() != null) {
+            String dName = p.getRegisteredPlayer().getDeck().getName();
+            if (dName != null && (dName.equalsIgnoreCase("Victory") || dName.toLowerCase().contains("acevik"))) return true;
+            if (p.getRegisteredPlayer().getDeck().getMain() != null) {
+                for (java.util.Map.Entry<forge.item.PaperCard, Integer> entry : p.getRegisteredPlayer().getDeck().getMain()) {
+                    if (entry.getKey() != null) {
+                        String cName = entry.getKey().getName();
+                        if ("Friendship Web".equals(cName) || "AceVik the Victorious".equals(cName) || "Baylee's Kiss".equals(cName)) {
+                            return true;
+                        }
+                    }
+                }
+            }
         }
         return false;
     }

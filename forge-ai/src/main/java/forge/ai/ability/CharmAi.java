@@ -379,31 +379,27 @@ public class CharmAi extends SpellAbilityAi {
             }
         }
 
-        // 1. Check if AI can pay the {2} mana cost
-        boolean canPayMana = false;
-        if (optionMana != null) {
-            canPayMana = ComputerUtilMana.canPayManaCost(optionMana, ai, 0, true);
-        }
+        int life = ai.getLife();
 
-        if (canPayMana && optionMana != null) {
-            chosenList.add(optionMana);
-            return chosenList;
-        }
-
-        // 2. Otherwise check life option scaling: 64 HP = 100%, 4 HP = 0%
-        if (optionLife != null) {
-            int life = ai.getLife();
+        // 1. Check life option scaling first: 64 HP = 100%, 4 HP = 0%
+        if (optionLife != null && life > 4) {
             double prob;
             if (life >= 64) {
                 prob = 1.0;
-            } else if (life <= 4) {
-                prob = 0.0;
             } else {
                 prob = (life - 4.0) / 60.0;
             }
 
             if (MyRandom.getRandom().nextDouble() < prob) {
                 chosenList.add(optionLife);
+                return chosenList;
+            }
+        }
+
+        // 2. Fallback to mana option if AI can pay {2} mana
+        if (optionMana != null) {
+            if (ComputerUtilMana.canPayManaCost(optionMana, ai, 0, true)) {
+                chosenList.add(optionMana);
                 return chosenList;
             }
         }

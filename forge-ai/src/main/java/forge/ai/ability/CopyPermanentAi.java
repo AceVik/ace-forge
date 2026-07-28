@@ -14,6 +14,7 @@ import forge.game.player.PlayerActionConfirmMode;
 import forge.game.player.PlayerCollection;
 import forge.game.spellability.SpellAbility;
 import forge.game.zone.ZoneType;
+import forge.util.MyRandom;
 
 import java.util.Collection;
 import java.util.List;
@@ -31,6 +32,21 @@ public class CopyPermanentAi extends SpellAbilityAi {
             return SpecialCardAi.MomirVigAvatar.consider(aiPlayer, sa);
         } else if ("MimicVat".equals(aiLogic)) {
             return SpecialCardAi.MimicVat.considerCopy(aiPlayer, sa);
+        } else if ("FriendshipWebLife".equals(aiLogic)) {
+            int life = aiPlayer.getLife();
+            if (life <= 4) {
+                return new AiAbilityDecision(0, AiPlayDecision.CantPlayAi);
+            }
+            double prob = life >= 64 ? 1.0 : (life - 4.0) / 60.0;
+            if (MyRandom.getRandom().nextDouble() < prob) {
+                return new AiAbilityDecision(100, AiPlayDecision.WillPlay);
+            }
+            return new AiAbilityDecision(0, AiPlayDecision.CantPlayAi);
+        } else if ("FriendshipWebMana".equals(aiLogic)) {
+            if (ComputerUtilMana.canPayManaCost(sa, aiPlayer, 0, true)) {
+                return new AiAbilityDecision(100, AiPlayDecision.WillPlay);
+            }
+            return new AiAbilityDecision(0, AiPlayDecision.CantPlayAi);
         } else if ("AtEOT".equals(aiLogic)) {
             if (ph.is(PhaseType.END_OF_TURN)) {
                 if (ph.getPlayerTurn() == aiPlayer) {

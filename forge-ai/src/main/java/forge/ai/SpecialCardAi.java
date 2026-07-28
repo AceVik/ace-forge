@@ -849,12 +849,7 @@ public class SpecialCardAi {
 
             if (isExileMode) {
                 if (blueCards.size() < 2) {
-                    // Need to have something else in hand that is blue in addition to Force of Will itself,
-                    // otherwise the AI will fail to play the card and the card will disappear from the pool
-                    return false;
-                } else if (!blueCards.anyMatch(CardPredicates.lessCMC(3))) {
-                    // We probably need a low-CMC card to exile to it, exiling a higher CMC spell may be suboptimal
-                    // since the AI does not prioritize/value cards vs. permission at the moment.
+                    // Need to have something else in hand that is blue in addition to Force of Will itself
                     return false;
                 }
             }

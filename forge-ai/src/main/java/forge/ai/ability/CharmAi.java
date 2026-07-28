@@ -50,6 +50,8 @@ public class CharmAi extends SpellAbilityAi {
             chosenList = choices.subList(1, choices.size());
         } else if ("Triskaidekaphobia".equals(ComputerUtilAbility.getAbilitySourceName(sa))) {
             chosenList = chooseTriskaidekaphobia(choices, ai);
+        } else if ("FriendshipWeb".equals(sa.getParamOrDefault("AILogic", ""))) {
+            chosenList = chooseFriendshipWeb(sa, choices, ai);
         } else {
             // only randomize if not all possible together
             if (num < choices.size()) {
@@ -71,6 +73,9 @@ public class CharmAi extends SpellAbilityAi {
         }
 
         if (chosenList.isEmpty()) {
+            if ("FriendshipWeb".equals(sa.getParamOrDefault("AILogic", ""))) {
+                return new AiAbilityDecision(0, AiPlayDecision.CantPlayAi);
+            }
             if (timingRight) {
                 // Set minimum choices for triggers where chooseMultipleOptionsAi() returns null
                 chosenList = chooseOptionsAi(sa, choices, ai, true, num, min);
@@ -353,6 +358,58 @@ public class CharmAi extends SpellAbilityAi {
             return new AiAbilityDecision(100, AiPlayDecision.WillPlay);
         }
         return super.chkDrawbackWithSubs(aiPlayer, ab);
+    }
+
+    private List<AbilitySub> chooseFriendshipWeb(SpellAbility sa, List<AbilitySub> choices, Player ai) {
+        List<AbilitySub> chosenList = Lists.newArrayList();
+
+        AbilitySub optionMana = null;
+        AbilitySub optionLife = null;
+
+        for (AbilitySub sub : choices) {
+            String costStr = sub.hasParam("Cost") ? sub.getParam("Cost") : "";
+            if (costStr.contains("PayLife")) {
+                optionLife = sub;
+            } else if (costStr.matches(".*\\d+.*") || (sub.getPayCosts() != null && sub.getPayCosts().hasManaCost())) {
+                optionMana = sub;
+            } else if (sub.getDescription() != null && sub.getDescription().toLowerCase().contains("life")) {
+                optionLife = sub;
+            } else {
+                optionMana = sub;
+            }
+        }
+
+        // 1. Check if AI can pay the {2} mana cost
+        boolean canPayMana = false;
+        if (optionMana != null) {
+            canPayMana = ComputerUtilMana.canPayManaCost(optionMana, ai, 0, true);
+        }
+
+        if (canPayMana && optionMana != null) {
+            chosenList.add(optionMana);
+            return chosenList;
+        }
+
+        // 2. Otherwise check life option scaling: 64 HP = 100%, 4 HP = 0%
+        if (optionLife != null) {
+            int life = ai.getLife();
+            double prob;
+            if (life >= 64) {
+                prob = 1.0;
+            } else if (life <= 4) {
+                prob = 0.0;
+            } else {
+                prob = (life - 4.0) / 60.0;
+            }
+
+            if (MyRandom.getRandom().nextDouble() < prob) {
+                chosenList.add(optionLife);
+                return chosenList;
+            }
+        }
+
+        // 3. Otherwise decline (returns empty chosenList)
+        return chosenList;
     }
 
 }

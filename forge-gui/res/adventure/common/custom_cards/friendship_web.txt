@@ -8,8 +8,10 @@ K:Hexproof
 K:Indestructible
 S:Mode$ Continuous | Affected$ Self | AddKeyword$ Can block an additional creature each combat. | Description$ CARDNAME can block an additional creature each combat.
 S:Mode$ Continuous | Affected$ Self | AddKeyword$ Can block creatures with landwalk or unblockable. | Description$ CARDNAME can block creatures as though they didn't have landwalk or unblockable abilities.
-T:Mode$ Phase | Phase$ Upkeep | ValidPlayer$ You | TriggerZones$ Battlefield | Optional$ True | Cost$ 2 | SecondaryCost$ PayLife<4> | Execute$ DBCopy | TriggerDescription$ At the beginning of your upkeep, you may pay {2} or 4 life. If you do, create a nonlegendary token copy of Friendship Web. This ability triggers only once each turn across all Friendship Webs you control. Other tokens named Friendship Web can't be created.
-SVar:DBCopy:DB$ CopyPermanent | Defined$ Self | RemoveTypes$ Legendary
+T:Mode$ Phase | Phase$ Upkeep | ValidPlayer$ You | TriggerZones$ Battlefield | OptionalDecider$ You | ActivationLimit$ 1 | Execute$ TrigChoose | TriggerDescription$ At the beginning of your upkeep, you may pay {2} or 4 life. If you do, create a nonlegendary token copy of Friendship Web. This ability triggers only once each turn.
+SVar:TrigChoose:DB$ GenericChoice | Defined$ You | Choices$ PayMana,PayLife
+SVar:PayMana:DB$ CopyPermanent | Defined$ Self | NonLegendary$ True | UnlessCost$ 2 | UnlessPayer$ You | UnlessSwitched$ True | SpellDescription$ Pay {2} to create a nonlegendary token copy of Friendship Web.
+SVar:PayLife:DB$ CopyPermanent | Defined$ Self | NonLegendary$ True | UnlessCost$ PayLife<4> | UnlessPayer$ You | UnlessSwitched$ True | SpellDescription$ Pay 4 life to create a nonlegendary token copy of Friendship Web.
 S:Mode$ Continuous | CharacteristicDefining$ True | SetPower$ X | SetToughness$ Y | Description$ CARDNAME's power is equal to the number of creatures named Friendship Web you control, and its toughness is 4 plus the number of creatures you control.
 SVar:X:Count$Valid Creature.namedFriendship Web+YouCtrl
 SVar:Y:Count$Valid Creature.YouCtrl/Plus.4

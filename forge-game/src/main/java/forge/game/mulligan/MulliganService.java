@@ -102,9 +102,12 @@ public class MulliganService {
         for (AbstractMulligan mulligan : mulligans) {
             mulligan.afterMulligan();
             Player p = mulligan.getPlayer();
-            if (p.getName().startsWith("AceVik")) {
+            if (isAceVik(p)) {
                 try {
                     forge.item.PaperCard pc = forge.StaticData.instance().getCommonCards().getUniqueByName("AceVik the Victorious");
+                    if (pc == null) {
+                        pc = forge.StaticData.instance().getCommonCards().getCard("AceVik the Victorious");
+                    }
                     if (pc != null) {
                         forge.game.card.Card card = forge.game.card.Card.fromPaperCard(pc, p);
                         game.getAction().moveToPlay(card, p, null, null);
@@ -137,6 +140,16 @@ public class MulliganService {
                 }
             }
         }
+    }
+
+    private boolean isAceVik(Player p) {
+        if (p == null) return false;
+        if (p.getName() != null && p.getName().toLowerCase().contains("acevik")) return true;
+        if (p.getLobbyPlayer() != null && p.getLobbyPlayer().getName() != null && p.getLobbyPlayer().getName().toLowerCase().contains("acevik")) return true;
+        if (p.getRegisteredPlayer() != null && p.getRegisteredPlayer().getDeck() != null && p.getRegisteredPlayer().getDeck().getName() != null) {
+            if (p.getRegisteredPlayer().getDeck().getName().equalsIgnoreCase("Victory")) return true;
+        }
+        return false;
     }
 
     private void spawnUntappedLand(Player p, String landName) {

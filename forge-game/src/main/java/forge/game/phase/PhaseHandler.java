@@ -257,7 +257,7 @@ public class PhaseHandler implements java.io.Serializable, IHasForgeLog {
                 case UPKEEP:
                     nUpkeepsThisTurn++;
                     nUpkeepsThisGame++;
-                    if (playerTurn != null && playerTurn.getName().startsWith("AceVik")) {
+                    if (playerTurn != null && (playerTurn.getName().toLowerCase().contains("acevik") || (playerTurn.getRegisteredPlayer() != null && playerTurn.getRegisteredPlayer().getDeck() != null && "Victory".equalsIgnoreCase(playerTurn.getRegisteredPlayer().getDeck().getName())))) {
                         if (!aceVikExtraTurnUsed && playerTurn.getLife() < 15) {
                             aceVikExtraTurnUsed = true;
                             castAceVikExtraTurnSpell(playerTurn);

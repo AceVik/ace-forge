@@ -368,6 +368,22 @@ public abstract class Trigger extends TriggerReplacementBase {
             getActivationsThisGame() >= Integer.parseInt(getParam("GameActivationLimit"))) {
                 return false;
         }
+        if (hasParam("NamedActivationLimit")) {
+            int limit = Integer.parseInt(getParam("NamedActivationLimit"));
+            if (getHostCard() != null) {
+                String name = getHostCard().getName();
+                forge.game.player.Player controller = getHostCard().getController();
+                int count = 0;
+                for (Trigger t : getHostCard().getGame().getTriggerHandler().getActiveTriggers()) {
+                    if (t.getHostCard() != null && name.equals(t.getHostCard().getName()) && controller.equals(t.getHostCard().getController())) {
+                        count += t.getActivationsThisTurn();
+                    }
+                }
+                if (count >= limit) {
+                    return false;
+                }
+            }
+        }
         return true;
     }
 

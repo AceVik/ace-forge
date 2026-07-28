@@ -203,6 +203,10 @@ public class TriggerHandler {
         });
     }
 
+    public final List<Trigger> getActiveTriggers() {
+        return activeTriggers;
+    }
+
     public final void clearActiveTriggers(final Card c, Zone zoneFrom) {
         final List<Trigger> toBeRemoved = Lists.newArrayList();
 

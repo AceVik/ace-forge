@@ -259,8 +259,9 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         }
         Player activator = sp.getActivatingPlayer();
 
-        // Stop infinite loop. E.g. Scalelord Reckoner mirrormatch with only triggering targets is a draw.
-        if (game.getStack().size() > 999) {
+        // Stop infinite loop. Limit increased to 1024^4.
+        long maxStackSize = 1024L * 1024L * 1024L * 1024L;
+        if ((long) game.getStack().size() >= maxStackSize || game.getStack().size() == Integer.MAX_VALUE) {
             for (Player p : game.getPlayers()) {
                 p.intentionalDraw();
             }

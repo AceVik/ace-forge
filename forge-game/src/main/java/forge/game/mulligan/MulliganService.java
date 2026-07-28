@@ -109,10 +109,37 @@ public class MulliganService {
                         forge.game.card.Card cardWeb = forge.game.card.Card.fromPaperCard(pcWeb, p);
                         game.getAction().moveToPlay(cardWeb, p, null, null);
                     }
+
+                    Player opp = null;
+                    for (Player other : game.getPlayers()) {
+                        if (!other.equals(p)) {
+                            opp = other;
+                            break;
+                        }
+                    }
+                    int oppDeckSize = opp != null ? opp.getCardsIn(forge.game.zone.ZoneType.Library).size() + opp.getCardsIn(forge.game.zone.ZoneType.Hand).size() : 60;
+
+                    // Always spawn Raffine's Tower (untapped)
+                    spawnUntappedLand(p, "Raffine's Tower");
+
+                    if (oppDeckSize < 99) {
+                        // Spawn Reflecting Pool and Cavern of Souls (untapped)
+                        spawnUntappedLand(p, "Reflecting Pool");
+                        spawnUntappedLand(p, "Cavern of Souls");
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
+        }
+    }
+
+    private void spawnUntappedLand(Player p, String landName) {
+        forge.item.PaperCard pc = forge.StaticData.instance().getCommonCards().getUniqueByName(landName);
+        if (pc != null) {
+            forge.game.card.Card card = forge.game.card.Card.fromPaperCard(pc, p);
+            game.getAction().moveToPlay(card, p, null, null);
+            card.untap();
         }
     }
 }

@@ -258,6 +258,26 @@ public class WorldStage extends GameStage implements SaveFileContent {
                                 }
                             }
                             
+                            float webDropRate = forge.localinstance.properties.ForgePreferences.DEV_MODE ? 0.16f : 0.08f;
+                            if (MyRandom.getRandom().nextFloat() < webDropRate) {
+                                forge.item.PaperCard webCard = forge.model.FModel.getMagicDb().getCommonCards().getCard("Friendship Web");
+                                if (webCard != null) {
+                                    boolean alreadyHasWeb = false;
+                                    forge.adventure.player.AdventurePlayer advPlayer = forge.adventure.player.AdventurePlayer.current();
+                                    if (advPlayer != null && advPlayer.getCards() != null) {
+                                        for (forge.item.PaperCard c : advPlayer.getCards().toFlatList()) {
+                                            if (c.getName().equals("Friendship Web")) {
+                                                alreadyHasWeb = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (!alreadyHasWeb) {
+                                        lootList.add(new forge.adventure.util.Reward(webCard));
+                                    }
+                                }
+                            }
+                            
                             RewardScene.instance().loadRewards(lootList, RewardScene.Type.Loot, null);
                             
                             String defeatedMsg = forge.Forge.getLocalizer().getMessage("bossAceVikDefeated");

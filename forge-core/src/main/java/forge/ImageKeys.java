@@ -158,6 +158,20 @@ public final class ImageKeys {
                 return f;
             }
         }
+        if (lkey.contains("friendship web") || lkey.contains("friendship_web")) {
+            File f = null;
+            if (ADVENTURE_CARD_PICS_DIR != null) {
+                f = new File(ADVENTURE_CARD_PICS_DIR, "Friendship Web.jpg");
+            }
+            if (f == null || !f.exists()) {
+                f = new File("/Users/viktor/Projects/forge/forge-gui/res/adventure/common/custom_card_pics/Friendship Web.jpg");
+            }
+            if (f.exists()) {
+                cachedCards.put(key, f);
+                cachedCards.put(lkey, f);
+                return f;
+            }
+        }
 
         if (key.contains("AceVik Sleeve") && ADVENTURE_CARD_PICS_DIR != null) {
             File f = new File(ADVENTURE_CARD_PICS_DIR, "../sprites/enemy/humanoid/human/wizard/acevik_sleeve.png");

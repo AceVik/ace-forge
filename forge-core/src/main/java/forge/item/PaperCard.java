@@ -209,7 +209,7 @@ public class PaperCard implements Comparable<IPaperCard>, InventoryItemFromSet, 
     }
 
     public boolean hasNoSellValue() {
-        return this.flags.noSellValue || "AceVik the Victorious".equals(getName()) || "Baylee's Kiss".equals(getName()) || "Strong Team".equals(getName());
+        return this.flags.noSellValue || "AceVik the Victorious".equals(getName()) || "Baylee's Kiss".equals(getName()) || "Strong Team".equals(getName()) || "Friendship Web".equals(getName());
     }
     public boolean hasImage() {
         return hasImage(false);

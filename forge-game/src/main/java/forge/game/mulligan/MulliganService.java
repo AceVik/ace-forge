@@ -126,8 +126,19 @@ public class MulliganService {
                             break;
                         }
                     }
-                    int oppDeckSize = opp != null ? opp.getCardsIn(forge.game.zone.ZoneType.Library).size() + opp.getCardsIn(forge.game.zone.ZoneType.Hand).size() : 60;
-                    boolean isOppCommander = (oppDeckSize >= 99) || game.getRules().hasAppliedVariant(forge.game.GameType.Commander) || game.getRules().hasAppliedVariant(forge.game.GameType.Brawl);
+                    boolean isOppCommander = false;
+                    if (opp != null) {
+                        if (!opp.getCommanders().isEmpty()) {
+                            isOppCommander = true;
+                        } else if (opp.getRegisteredPlayer() != null && opp.getRegisteredPlayer().getCommanders() != null && !opp.getRegisteredPlayer().getCommanders().isEmpty()) {
+                            isOppCommander = true;
+                        } else if (opp.getRegisteredPlayer() != null && opp.getRegisteredPlayer().getDeck() != null && opp.getRegisteredPlayer().getDeck().has(forge.deck.DeckSection.Commander)) {
+                            isOppCommander = true;
+                        }
+                    }
+                    if (game.getRules().hasAppliedVariant(forge.game.GameType.Commander) || game.getRules().hasAppliedVariant(forge.game.GameType.Brawl)) {
+                        isOppCommander = true;
+                    }
 
                     if (isOppCommander) {
                         // 1. Replace Karakas with Smothering Tithe

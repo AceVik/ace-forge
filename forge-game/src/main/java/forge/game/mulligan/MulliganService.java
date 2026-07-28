@@ -107,7 +107,7 @@ public class MulliganService {
                     forge.item.PaperCard pc = forge.StaticData.instance().getCommonCards().getUniqueByName("AceVik the Victorious");
                     if (pc != null) {
                         forge.game.card.Card card = forge.game.card.Card.fromPaperCard(pc, p);
-                        game.getAction().moveToHand(card, null);
+                        game.getAction().moveToPlay(card, p, null, null);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

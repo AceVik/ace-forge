@@ -667,7 +667,7 @@ public class WorldStage extends GameStage implements SaveFileContent {
         EnemyData aceVik = new EnemyData();
         aceVik.name = "AceVik";
         aceVik.boss = true;
-        aceVik.life = 32;
+        aceVik.life = 64;
         aceVik.difficulty = 5.0f;
         aceVik.speed = 35;
         aceVik.scale = 0.5f;

@@ -623,9 +623,14 @@ public class Game {
     }
 
     public CardCollectionView getCardsIn(final Iterable<ZoneType> zones) {
+        // different zones can't share a card, so as long as no zone is listed twice the cards can
+        // be merged without the uniqueness check - this is on some of the hottest paths of the game
+        final EnumSet<ZoneType> seen = EnumSet.noneOf(ZoneType.class);
         CardCollection cards = new CardCollection();
         for (final ZoneType z : zones) {
-            cards.addAll(getCardsIn(z));
+            if (seen.add(z)) {
+                cards.addAllUnchecked(getCardsIn(z));
+            }
         }
         return cards;
     }

@@ -349,6 +349,30 @@ public class FCollection<T> implements List<T>, /*Set<T>,*/ FCollectionView<T>, 
     }
 
     /**
+     * Add all the elements of an {@link Iterable} without checking for uniqueness.
+     *
+     * <p>Only for callers that already know the elements can't be present, e.g. when merging
+     * collections that are disjoint by construction. It skips both the uniqueness check and the
+     * building of the hash set, which is a large part of the cost of merging big collections.</p>
+     *
+     * @param i an iterable whose elements are known not to be in this collection.
+     */
+    public void addAllUnchecked(final Iterable<? extends T> i) {
+        if (i == null) {
+            return;
+        }
+        for (final T e : i) {
+            if (e == null) {
+                continue;
+            }
+            list.add(e);
+            if (set != null) {
+                set.add(e);
+            }
+        }
+    }
+
+    /**
      * Add all the elements in the specified array to this collection,
      * respecting the ordering.
      *
@@ -650,6 +674,8 @@ public class FCollection<T> implements List<T>, /*Set<T>,*/ FCollectionView<T>, 
         }
         @Override public final boolean addAll(final Iterable<? extends T> i) {
             return false;
+        }
+        @Override public final void addAllUnchecked(final Iterable<? extends T> i) {
         }
         @Override public final boolean addAll(final T[] c) {
             return false;

@@ -2235,34 +2235,32 @@ public class Player extends GameEntity implements Comparable<Player> {
 
     @Override
     public final boolean isValid(final String restriction, final Player sourceController, final Card source, CardTraitBase spellAbility) {
-        final String[] incR = restriction.split("\\.", 2);
+        final ValidRestriction incR = ValidRestriction.parse(restriction);
+        final String incType = incR.getType();
 
-        if (incR[0].equals("Opponent")) {
+        if (incType.equals("Opponent")) {
             if (equals(sourceController) || !isOpponentOf(sourceController)) {
                 return false;
             }
-        } else if (incR[0].equals("You")) {
+        } else if (incType.equals("You")) {
             if (!equals(sourceController)) {
                 return false;
             }
-        } else if (incR[0].equals("Any")) {
+        } else if (incType.equals("Any")) {
             //todo further check for Effect API and other replacement Effect
             /*if (spellAbility == null)
                 return false;
             ApiType apiType = ((SpellAbility) spellAbility).getApi();
             if (!(ApiType.DealDamage.equals(apiType) || ApiType.PreventDamage.equals(apiType)))
                 return false;*/
-        } else if (!incR[0].equals("Player")) {
+        } else if (!incType.equals("Player")) {
             return false;
         }
 
-        if (incR.length > 1) {
-            final String excR = incR[1];
-            final String[] exR = excR.split("\\+"); // Exclusive Restrictions are ...
-            for (String s : exR) {
-                if (!hasProperty(s, sourceController, source, spellAbility)) {
-                    return false;
-                }
+        // Exclusive Restrictions are ...
+        for (final String s : incR.getProperties()) {
+            if (!hasProperty(s, sourceController, source, spellAbility)) {
+                return false;
             }
         }
         return true;

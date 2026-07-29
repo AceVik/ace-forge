@@ -4923,12 +4923,14 @@ public class Card extends GameEntity implements Comparable<Card>, IHasSVars, ITr
         for (Table.Cell<Long, Long, CardTraitChanges> e : changes.cellSet()) {
             changedCardTraitsByText.put(e.getRowKey(), e.getColumnKey(), e.getValue().copy(this, true));
         }
+        invalidateTraitCache();
     }
     public final void addChangedCardTraitsByText(Collection<SpellAbility> spells,
             Collection<Trigger> trigger, Collection<ReplacementEffect> replacements, Collection<StaticAbility> statics, long timestamp, long staticId) {
         changedCardTraitsByText.put(timestamp, staticId, new CardTraitChanges(
             spells, trigger, replacements, statics, e -> true
         ));
+        invalidateTraitCache();
 
         // setting card traits via text, does overwrite any other word change effects?
         this.changedTextColors.addEmpty(timestamp, staticId);
@@ -4951,6 +4953,7 @@ public class Card extends GameEntity implements Comparable<Card>, IHasSVars, ITr
     }
     public final ICardTraitChanges addChangedCardTraits(ICardTraitChanges changes, long timestamp, long staticId, boolean updateView) {
         changedCardTraits.put(timestamp, staticId, changes);
+        invalidateTraitCache();
         if (updateView) {
             updateAbilityTextForView();
         }
@@ -4958,10 +4961,34 @@ public class Card extends GameEntity implements Comparable<Card>, IHasSVars, ITr
     }
 
     public final boolean removeChangedCardTraits(long timestamp, long staticId) {
-        return changedCardTraits.remove(timestamp, staticId) != null;
+        if (changedCardTraits.remove(timestamp, staticId) != null) {
+            invalidateTraitCache();
+            return true;
+        }
+        return false;
     }
     public final boolean removeChangedCardTraitsByText(long timestamp, long staticId) {
-        return changedCardTraitsByText.remove(timestamp, staticId) != null;
+        if (changedCardTraitsByText.remove(timestamp, staticId) != null) {
+            invalidateTraitCache();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Bumped whenever anything the cached trait collections of this card's states are built from
+     * changes (keywords, trait changing effects, types, the intrinsic collections themselves).
+     *
+     * @see CardState#getStaticAbilities()
+     */
+    private long traitCacheVersion = 0;
+
+    public long getTraitCacheVersion() {
+        return traitCacheVersion;
+    }
+
+    public void invalidateTraitCache() {
+        traitCacheVersion++;
     }
 
     public Iterable<? extends ICardTraitChanges> getChangedCardTraitsList(CardState state) {
@@ -4984,9 +5011,11 @@ public class Card extends GameEntity implements Comparable<Card>, IHasSVars, ITr
         for (Table.Cell<Long, Long, ICardTraitChanges> e : changes.cellSet()) {
             changedCardTraits.put(e.getRowKey(), e.getColumnKey(), e.getValue().copy(this, true));
         }
+        invalidateTraitCache();
     }
 
     public boolean clearChangedCardTraits() {
+        invalidateTraitCache();
         boolean changed = false;
         if (!changedCardTraitsByText.isEmpty()) {
             changed = true;
@@ -5241,6 +5270,8 @@ public class Card extends GameEntity implements Comparable<Card>, IHasSVars, ITr
         }
 
         state.setCachedKeywords(keywords);
+        // keywords contribute traits, so anything cached from them has to be rebuilt
+        invalidateTraitCache();
     }
     private void visitUnhiddenKeywords(CardState state, Visitor<KeywordInterface> visitor) {
         for (KeywordInterface kw : getUnhiddenKeywords(state)) {
@@ -5481,6 +5512,7 @@ public class Card extends GameEntity implements Comparable<Card>, IHasSVars, ITr
      * Update the changed text of the intrinsic spell abilities and keywords.
      */
     public void updateChangedText() {
+        invalidateTraitCache();
         currentState.updateChangedText();
 
         // update changed text in the layer, for Volrath's Shapeshifter
@@ -5530,6 +5562,7 @@ public class Card extends GameEntity implements Comparable<Card>, IHasSVars, ITr
 
         updateAbilityTextForView();
         view.updateNonAbilityText(this);
+        invalidateTraitCache();
     }
 
     public final ImmutableMap<String, String> getChangedTextColorWords() {
@@ -5757,44 +5790,42 @@ public class Card extends GameEntity implements Comparable<Card>, IHasSVars, ITr
     @Override
     public final boolean isValid(final String restriction, final Player sourceController, final Card source, CardTraitBase spellAbility) {
         // Inclusive restrictions are Card types
-        final String[] incR = restriction.split("\\.", 2);
+        final ValidRestriction incR = ValidRestriction.parse(restriction);
+        final String incType = incR.getType();
 
-        boolean testFailed = false;
-        if (incR[0].startsWith("!")) {
-            testFailed = true; // a bit counter logical))
-            incR[0] = incR[0].substring(1); // consume negation sign
-        }
+        // a bit counter logical))
+        final boolean testFailed = incR.isNegated();
 
         // need to filter out prepared spells for other cards
         if (getCurrentStateName() == CardStateName.PreparedSpell && isInZone(ZoneType.Exile)) {
             return testFailed;
         }
 
-        if (incR[0].equals("Spell")) {
+        if (incType.equals("Spell")) {
             if (!isSpell()) {
                 return testFailed;
             }
-        } else if (incR[0].equals("Permanent")) {
+        } else if (incType.equals("Permanent")) {
             if (!isPermanent()) {
                 return testFailed;
             }
-        } else if (incR[0].equals("Effect")) {
+        } else if (incType.equals("Effect")) {
             if (!isImmutable()) {
                 return testFailed;
             }
-        } else if (incR[0].equals("Emblem")) {
+        } else if (incType.equals("Emblem")) {
             if (!isEmblem()) {
                 return testFailed;
             }
-        } else if (incR[0].equals("Boon")) {
+        } else if (incType.equals("Boon")) {
             if (!isBoon()) {
                 return testFailed;
             }
-        } else if (incR[0].equals("card") || incR[0].equals("Card")) {
+        } else if (incType.equals("card") || incType.equals("Card")) {
             if (isImmutable()) {
                 return testFailed;
             }
-        } else if (incR[0].equals("Any")) {
+        } else if (incType.equals("Any")) {
             if (!(isCreature() || isPlaneswalker() || isBattle())) {
                 return false;
             }
@@ -5804,17 +5835,14 @@ public class Card extends GameEntity implements Comparable<Card>, IHasSVars, ITr
             ApiType apiType = ((SpellAbility) spellAbility).getApi();
             if (!(ApiType.DealDamage.equals(apiType) || ApiType.PreventDamage.equals(apiType)))
                 return false;*/
-        } else if (!getType().hasStringType(incR[0])) {
+        } else if (!getType().hasStringType(incType)) {
             return testFailed; // Check for wrong type
         }
 
-        if (incR.length > 1) {
-            final String excR = incR[1];
-            final String[] exRs = excR.split("\\+"); // Exclusive Restrictions are ...
-            for (String exR : exRs) {
-                if (!hasProperty(exR, sourceController, source, spellAbility)) {
-                    return testFailed;
-                }
+        // Exclusive Restrictions are ...
+        for (final String exR : incR.getProperties()) {
+            if (!hasProperty(exR, sourceController, source, spellAbility)) {
+                return testFailed;
             }
         }
         return !testFailed;
@@ -7482,7 +7510,8 @@ public class Card extends GameEntity implements Comparable<Card>, IHasSVars, ITr
             sa.setActivatingPlayer(player);
             // fix things like retrace
             // check only if SA can't be cast normally
-            if (!sa.canPlay(true) && (removeUnplayable || !sa.isPossible())) {
+            final boolean canPlay = sa.canPlay();
+            if (!canPlay && !sa.canPlayWithExtraCosts() && (removeUnplayable || !sa.isPossible(canPlay))) {
                 toRemove.add(sa);
             }
         }

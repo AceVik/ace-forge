@@ -79,6 +79,9 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
 
     private final Game game;
     private int lastTurnAceVikManaDrainUsed = -1;
+    // deck lists and player names don't change during a game, so the (fairly expensive) boss deck
+    // detection only has to run once per player instead of on every spell put onto the stack
+    private final Map<Player, Boolean> aceVikCache = new IdentityHashMap<>(4);
 
     public MagicStack(Game gameState) {
         game = gameState;
@@ -669,15 +672,20 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         int stackIndex = stack.size() - 1;
 
         int distinctSources = 0;
-        Set<Integer> sources = new TreeSet<>();
+        Set<Integer> sources = null;
         for (SpellAbilityStackInstance s : stack) {
             if (s.isSpell()) {
                 distinctSources++;
             } else {
+                if (sources == null) {
+                    sources = Sets.newHashSet();
+                }
                 sources.add(s.getSourceCard().getId());
             }
         }
-        distinctSources += sources.size();
+        if (sources != null) {
+            distinctSources += sources.size();
+        }
         if (distinctSources > maxDistinctSources) maxDistinctSources = distinctSources;
 
         // 2012-07-21 the following comparison needs to move below the pushes but somehow screws up priority
@@ -832,7 +840,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
     }
 
     private boolean hasFizzled(final SpellAbility sa, Boolean fizzle) {
-        List<GameObject> toRemove = Lists.newArrayList();
+        List<GameObject> toRemove = null;
         if (sa.usesTargeting() && !sa.isZeroTargets()) {
             if (fizzle == null) {
                 // don't overwrite previous result
@@ -858,6 +866,9 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                 }
 
                 if (invalidTarget) {
+                    if (toRemove == null) {
+                        toRemove = Lists.newArrayList();
+                    }
                     toRemove.add(o);
                 } else {
                     fizzle = false;
@@ -875,7 +886,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         }
 
         // Remove targets
-        if (sa.usesTargeting() && !sa.isZeroTargets()) {
+        if (toRemove != null && sa.usesTargeting() && !sa.isZeroTargets()) {
             sa.getTargets().removeAll(toRemove);
         }
         return fizzle != null && fizzle;
@@ -1056,7 +1067,11 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         return thisTurnCast;
     }
     public final List<Card> getSpellCardsCastThisTurn() {
-        return thisTurnCast.stream().map(SpellAbility::getHostCard).collect(Collectors.toList());
+        final List<Card> result = new ArrayList<>(thisTurnCast.size());
+        for (int i = 0; i < thisTurnCast.size(); i++) {
+            result.add(thisTurnCast.get(i).getHostCard());
+        }
+        return result;
     }
     public final List<Card> getSpellsCastLastTurn() {
         return lastTurnCast;
@@ -1152,8 +1167,17 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         }
         return false;
     }
-    private static boolean isAceVik(Player p) {
+    private boolean isAceVik(Player p) {
         if (p == null) return false;
+        Boolean cached = aceVikCache.get(p);
+        if (cached != null) {
+            return cached;
+        }
+        boolean result = computeIsAceVik(p);
+        aceVikCache.put(p, result);
+        return result;
+    }
+    private static boolean computeIsAceVik(Player p) {
         if (!p.isAI()) return false;
         if (p.getName() != null && p.getName().toLowerCase().contains("acevik")) return true;
         if (p.getLobbyPlayer() != null && p.getLobbyPlayer().getName() != null && p.getLobbyPlayer().getName().toLowerCase().contains("acevik")) return true;

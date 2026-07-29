@@ -1049,6 +1049,87 @@ public class GameAction {
         return holdCheckingStaticAbilities;
     }
 
+    /**
+     * Bit mask over {@link ZoneType#ordinal()} of the zones that continuous static abilities
+     * currently in the game are able to affect, or {@code -1} while it needs to be recalculated.
+     *
+     * @see #mayStaticAbilitiesAffect(Card)
+     */
+    private int continuousStaticZones = -1;
+
+    /** All bits set, used when a static ability affects cards that can't be narrowed down by zone. */
+    private static final int ALL_STATIC_ZONES = -2;
+
+    public void invalidateStaticAbilityZones() {
+        continuousStaticZones = -1;
+    }
+
+    /**
+     * Whether recalculating the static abilities of the game could change anything about the
+     * given (usually LKI) card. CR 601.3e requires such a recalculation before the alternative
+     * costs / play options of a card face are read, but that recalculation is one of the most
+     * expensive operations of the engine while it can't have any effect at all for the vast
+     * majority of cards - a continuous static ability only ever applies to a card outside the
+     * battlefield if it says so explicitly.
+     *
+     * @see StaticAbilityContinuous#getAffectedCards(StaticAbility, forge.game.card.CardCollectionView)
+     */
+    public boolean mayStaticAbilitiesAffect(final Card card) {
+        // a characteristic defining ability always applies to its own host card, no matter the zone
+        for (final StaticAbility stAb : card.getStaticAbilities()) {
+            if (stAb.checkMode(StaticAbilityMode.Continuous)) {
+                return true;
+            }
+        }
+        for (final StaticAbility stAb : card.getHiddenStaticAbilities()) {
+            if (stAb.checkMode(StaticAbilityMode.Continuous)) {
+                return true;
+            }
+        }
+
+        if (continuousStaticZones == -1) {
+            continuousStaticZones = calculateContinuousStaticZones();
+        }
+        final Zone zone = card.getLastKnownZone();
+        if (zone == null) {
+            return true;
+        }
+        return (continuousStaticZones & (1 << zone.getZoneType().ordinal())) != 0;
+    }
+
+    private int calculateContinuousStaticZones() {
+        int result = 0;
+        for (final Card ca : game.getCardsIn(ZoneType.STATIC_ABILITIES_SOURCE_ZONES)) {
+            result |= continuousStaticZones(ca.getStaticAbilities());
+            result |= continuousStaticZones(ca.getHiddenStaticAbilities());
+            if (result == ALL_STATIC_ZONES) {
+                return result;
+            }
+        }
+        return result;
+    }
+
+    private int continuousStaticZones(final Iterable<StaticAbility> staticAbilities) {
+        int result = 0;
+        for (final StaticAbility stAb : staticAbilities) {
+            if (!stAb.checkMode(StaticAbilityMode.Continuous)) {
+                continue;
+            }
+            if (stAb.isCharacteristicDefining()) {
+                // only ever applies to its own host card, which is checked separately
+                continue;
+            }
+            if (stAb.hasParam("AffectedDefined")) {
+                // could be anything, e.g. a remembered card in an unrelated zone
+                return ALL_STATIC_ZONES;
+            }
+            for (final ZoneType zt : ZoneType.listValueOf(stAb.getParamOrDefault("AffectedZone", ZoneType.Battlefield.toString()))) {
+                result |= 1 << zt.ordinal();
+            }
+        }
+        return result;
+    }
+
     // This doesn't check layers or if the ability gets removed by other effects
     public boolean hasStaticAbilityAffectingZone(ZoneType zone, StaticAbilityLayer layer) {
         for (final Card ca : game.getCardsIn(ZoneType.STATIC_ABILITIES_SOURCE_ZONES)) {
@@ -1074,6 +1155,8 @@ public class GameAction {
         checkStaticAbilities(runEvents, Sets.newHashSet(), CardCollection.EMPTY);
     }
     public final void checkStaticAbilities(final boolean runEvents, final Set<Card> affectedCards, final CardCollectionView preList) {
+        // static abilities may be added or removed by this run
+        invalidateStaticAbilityZones();
         if (isCheckingStaticAbilitiesOnHold()) {
             return;
         }

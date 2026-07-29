@@ -2,7 +2,6 @@ package forge.game.staticability;
 
 import forge.game.Game;
 import forge.game.card.Card;
-import forge.game.card.CardCollection;
 import forge.game.player.Player;
 import forge.game.spellability.SpellAbility;
 import forge.game.zone.ZoneType;
@@ -11,16 +10,28 @@ public class StaticAbilityCastWithFlash {
 
     public static boolean anyWithFlashNeedsInfo(final SpellAbility sa, final Card card, final Player activator) {
         final Game game = activator.getGame();
-        final CardCollection allp = new CardCollection(game.getCardsIn(ZoneType.STATIC_ABILITIES_SOURCE_ZONES));
-        allp.add(card);
-        for (final Card ca : allp) {
-            for (final StaticAbility stAb : ca.getStaticAbilities()) {
-                if (!stAb.checkConditions(StaticAbilityMode.CastWithFlash)) {
+        // this is checked for every castable spell, so avoid copying all cards in the game around:
+        // the sources are walked zone by zone and the card itself is only checked once at the end
+        for (final ZoneType zone : ZoneType.STATIC_ABILITIES_SOURCE_ZONES) {
+            for (final Card ca : game.getCardsIn(zone)) {
+                if (ca == card) {
                     continue;
                 }
-                if (applyWithFlashNeedsInfo(stAb, sa, card, activator)) {
+                if (checkNeedsInfo(ca, sa, card, activator)) {
                     return true;
                 }
+            }
+        }
+        return checkNeedsInfo(card, sa, card, activator);
+    }
+
+    private static boolean checkNeedsInfo(final Card ca, final SpellAbility sa, final Card card, final Player activator) {
+        for (final StaticAbility stAb : ca.getStaticAbilities()) {
+            if (!stAb.checkConditions(StaticAbilityMode.CastWithFlash)) {
+                continue;
+            }
+            if (applyWithFlashNeedsInfo(stAb, sa, card, activator)) {
+                return true;
             }
         }
         return false;
@@ -28,16 +39,26 @@ public class StaticAbilityCastWithFlash {
 
     public static boolean anyWithFlash(final SpellAbility sa, final Card card, final Player activator) {
         final Game game = activator.getGame();
-        final CardCollection allp = new CardCollection(game.getCardsIn(ZoneType.STATIC_ABILITIES_SOURCE_ZONES));
-        allp.add(card);
-        for (final Card ca : allp) {
-            for (final StaticAbility stAb : ca.getStaticAbilities()) {
-                if (!stAb.checkConditions(StaticAbilityMode.CastWithFlash)) {
+        for (final ZoneType zone : ZoneType.STATIC_ABILITIES_SOURCE_ZONES) {
+            for (final Card ca : game.getCardsIn(zone)) {
+                if (ca == card) {
                     continue;
                 }
-                if (applyWithFlashAbility(stAb, sa, card, activator)) {
+                if (checkWithFlash(ca, sa, card, activator)) {
                     return true;
                 }
+            }
+        }
+        return checkWithFlash(card, sa, card, activator);
+    }
+
+    private static boolean checkWithFlash(final Card ca, final SpellAbility sa, final Card card, final Player activator) {
+        for (final StaticAbility stAb : ca.getStaticAbilities()) {
+            if (!stAb.checkConditions(StaticAbilityMode.CastWithFlash)) {
+                continue;
+            }
+            if (applyWithFlashAbility(stAb, sa, card, activator)) {
+                return true;
             }
         }
         return false;

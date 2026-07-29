@@ -43,6 +43,7 @@ import forge.game.GameEntityCounterTable;
 import forge.game.GameObject;
 import forge.game.IHasSVars;
 import forge.game.IIdentifiable;
+import forge.game.ValidRestriction;
 import forge.game.ability.AbilityKey;
 import forge.game.ability.AbilityUtils;
 import forge.game.ability.ApiType;
@@ -452,6 +453,15 @@ public abstract class SpellAbility extends CardTraitBase implements ISpellAbilit
         if (!checkOptionalCosts) {
             return false;
         }
+        return canPlayWithExtraCosts();
+    }
+
+    /**
+     * Whether this can be played by paying additional optional or alternative costs, assuming it
+     * can't be played normally. Split from {@link #canPlay(boolean)} so callers that already know
+     * the result of {@link #canPlay()} don't have to compute it twice.
+     */
+    public boolean canPlayWithExtraCosts() {
         for (OptionalCostValue val : GameActionUtil.getOptionalCostValues(this)) {
             if (canPlayWithOptionalCost(val)) {
                 return true;
@@ -473,6 +483,14 @@ public abstract class SpellAbility extends CardTraitBase implements ISpellAbilit
 
     public boolean isPossible() {
         return canPlay(); //by default, ability is only possible if it can be played
+    }
+
+    /**
+     * Same as {@link #isPossible()} for a caller that already knows the result of
+     * {@link #canPlay()}, so it doesn't have to be calculated a second time.
+     */
+    public boolean isPossible(final boolean canPlay) {
+        return canPlay;
     }
 
     public boolean promptIfOnlyPossibleAbility() {
@@ -2186,69 +2204,64 @@ public abstract class SpellAbility extends CardTraitBase implements ISpellAbilit
     @Override
     public final boolean isValid(final String restriction, final Player sourceController, final Card source, CardTraitBase spellAbility) {
         // Inclusive restrictions are Card types
-        final String[] incR = restriction.split("\\.", 2);
+        final ValidRestriction incR = ValidRestriction.parse(restriction);
+        final String incType = incR.getType();
         SpellAbility root = getRootAbility();
 
-        boolean testFailed = false;
-        if (incR[0].startsWith("!")) {
-            testFailed = true; // a bit counterintuitive
-            incR[0] = incR[0].substring(1); // consume negation sign
-        }
+        // a bit counterintuitive
+        final boolean testFailed = incR.isNegated();
 
-        if (incR[0].equals("Spell")) {
+        if (incType.equals("Spell")) {
             if (!root.isSpell()) {
                 return testFailed;
             }
         }
-        else if (incR[0].equals("Ability")) {
+        else if (incType.equals("Ability")) {
             if (!root.isAbility()) {
                 return testFailed;
             }
         }
-        else if (incR[0].equals("Instant")) {
+        else if (incType.equals("Instant")) {
             if (!root.getCardState().getType().isInstant()) {
                 return testFailed;
             }
         }
-        else if (incR[0].equals("Sorcery")) {
+        else if (incType.equals("Sorcery")) {
             if (!root.getCardState().getType().isSorcery()) {
                 return testFailed;
             }
         }
-        else if (incR[0].equals("Triggered")) {
+        else if (incType.equals("Triggered")) {
             if (!root.isTrigger()) {
                 return testFailed;
             }
         }
-        else if (incR[0].equals("Activated")) {
+        else if (incType.equals("Activated")) {
             if (!root.isActivatedAbility()) {
                 return testFailed;
             }
         }
-        else if (incR[0].equals("Static")) {
+        else if (incType.equals("Static")) {
             if (!(root instanceof AbilityStatic)) {
                 return testFailed;
             }
         }
-        else if (incR[0].contains("LandAbility")) {
+        else if (incType.contains("LandAbility")) {
             if (!(root.isLandAbility())) {
                 return testFailed;
             }
         }
-        else if (incR[0].equals("SpellAbility")) {
+        else if (incType.equals("SpellAbility")) {
             // Match anything
         }
         else { //not a spell/ability type
             return testFailed;
         }
 
-        if (incR.length > 1) {
-            final String excR = incR[1];
-            final String[] exR = excR.split("\\+"); // Exclusive Restrictions are ...
-            for (String s : exR) {
-                if (!hasProperty(s, sourceController, source, spellAbility)) {
-                    return testFailed;
-                }
+        // Exclusive Restrictions are ...
+        for (final String s : incR.getProperties()) {
+            if (!hasProperty(s, sourceController, source, spellAbility)) {
+                return testFailed;
             }
         }
         return !testFailed;

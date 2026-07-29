@@ -30,7 +30,8 @@ public class PlayerCollection extends FCollection<Player> {
     public final CardCollection getCardsIn(ZoneType zone) {
         CardCollection result = new CardCollection();
         for (Player p : this) {
-            result.addAll(p.getCardsIn(zone));
+            // a card is only ever in one player's zone, so no dedup pass is needed here
+            result.addAllUnchecked(p.getCardsIn(zone));
         }
         return result;
     }

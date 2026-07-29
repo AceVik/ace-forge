@@ -72,6 +72,18 @@ public class Zone implements java.io.Serializable, Iterable<Card> {
     protected void onChanged() {
     }
 
+    /**
+     * Any card entering or leaving a zone can change which static abilities exist and what they
+     * are able to affect.
+     *
+     * @see forge.game.GameAction#mayStaticAbilitiesAffect(Card)
+     */
+    private void invalidateStaticAbilityZones() {
+        if (game.getAction() != null) {
+            game.getAction().invalidateStaticAbilityZones();
+        }
+    }
+
     public Player getPlayer() { // generic zones like stack have no player associated
         return null;
     }
@@ -138,6 +150,7 @@ public class Zone implements java.io.Serializable, Iterable<Card> {
         }
 
         c.setZone(this);
+        invalidateStaticAbilityZones();
 
         if ((zoneType == ZoneType.Battlefield || !c.isToken() || c.getCurrentStateName() == CardStateName.PreparedSpell) || (zoneType == ZoneType.Stack && c.getCopiedPermanent() != null)) {
             if (index == null) {
@@ -161,6 +174,7 @@ public class Zone implements java.io.Serializable, Iterable<Card> {
 
     public void remove(final Card c) {
         if (cardList.remove(c)) {
+            invalidateStaticAbilityZones();
             onChanged();
             game.fireEvent(new GameEventZone(zoneType, getPlayer(), EventValueChangeType.Removed, c));
         }
@@ -172,6 +186,7 @@ public class Zone implements java.io.Serializable, Iterable<Card> {
             c.setZone(this);
             cardList.add(c);
         }
+        invalidateStaticAbilityZones();
         onChanged();
         game.fireEvent(new GameEventZone(zoneType, getPlayer(), EventValueChangeType.ComplexUpdate, null));
     }
@@ -179,6 +194,7 @@ public class Zone implements java.io.Serializable, Iterable<Card> {
     public final void removeAllCards(boolean forcedWithoutEvents) {
         if (forcedWithoutEvents) {
             cardList.clear();
+            invalidateStaticAbilityZones();
         } else {
             for (Card c : cardList) {
                 remove(c);

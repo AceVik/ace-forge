@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
@@ -21,8 +22,26 @@ public class KeywordCollection implements ICardTraitChanges, Iterable<KeywordInt
     private final Multimap<Keyword, KeywordInterface> map = MultimapBuilder.hashKeys()
             .linkedHashSetValues().build();
 
+    /**
+     * Flat snapshot of {@link #map}'s values. Iterating a multimap is far more expensive than
+     * walking a plain list, and these collections are traversed millions of times per game (every
+     * trait rebuild does), while they change rarely. Rebuilt lazily, dropped by every mutator.
+     */
+    private List<KeywordInterface> flat;
+
     public KeywordCollection() {
         super();
+    }
+
+    private List<KeywordInterface> flat() {
+        if (flat == null) {
+            flat = ImmutableList.copyOf(map.values());
+        }
+        return flat;
+    }
+
+    private void invalidate() {
+        flat = null;
     }
 
     public boolean contains(Keyword keyword) {
@@ -34,7 +53,7 @@ public class KeywordCollection implements ICardTraitChanges, Iterable<KeywordInt
     }
 
     public int size() {
-        return map.values().size();
+        return flat().size();
     }
 
     public int getAmount(Keyword keyword) {
@@ -57,6 +76,7 @@ public class KeywordCollection implements ICardTraitChanges, Iterable<KeywordInt
         Collection<KeywordInterface> list = map.get(keyword);
         if (list.isEmpty() || !inst.redundant(list)) {
             list.add(inst);
+            invalidate();
             return true;
         }
         return false;
@@ -90,15 +110,26 @@ public class KeywordCollection implements ICardTraitChanges, Iterable<KeywordInt
             }
         }
 
+        if (result) {
+            invalidate();
+        }
         return result;
     }
 
     public boolean remove(KeywordInterface keyword) {
-        return map.remove(keyword.getKeyword(), keyword);
+        if (map.remove(keyword.getKeyword(), keyword)) {
+            invalidate();
+            return true;
+        }
+        return false;
     }
 
     public boolean removeAll(Keyword kenum) {
-        return !map.removeAll(kenum).isEmpty();
+        if (!map.removeAll(kenum).isEmpty()) {
+            invalidate();
+            return true;
+        }
+        return false;
     }
 
     public boolean removeAll(Iterable<String> keywords) {
@@ -118,15 +149,22 @@ public class KeywordCollection implements ICardTraitChanges, Iterable<KeywordInt
                 result = true;
             }
         }
+        if (result) {
+            invalidate();
+        }
         return result;
     }
 
     public void clear() {
+        if (map.isEmpty()) {
+            return;
+        }
         map.clear();
+        invalidate();
     }
 
     public boolean contains(String keyword) {
-        for (KeywordInterface inst : map.values()) {
+        for (KeywordInterface inst : flat()) {
             if (keyword.equals(inst.getOriginal())) {
                 return true;
             }
@@ -136,7 +174,7 @@ public class KeywordCollection implements ICardTraitChanges, Iterable<KeywordInt
 
     public int getAmount(String k) {
         int amount = 0;
-        for (KeywordInterface inst : map.values()) {
+        for (KeywordInterface inst : flat()) {
             if (k.equals(inst.getOriginal())) {
                 amount++;
             }
@@ -145,7 +183,7 @@ public class KeywordCollection implements ICardTraitChanges, Iterable<KeywordInt
     }
 
     public Collection<KeywordInterface> getValues() {
-        return map.values();
+        return flat();
     }
 
     public Collection<KeywordInterface> getValues(final Keyword keyword) {
@@ -165,7 +203,7 @@ public class KeywordCollection implements ICardTraitChanges, Iterable<KeywordInt
     }
 
     public void setHostCard(final Card host) {
-        for (KeywordInterface k : map.values()) {
+        for (KeywordInterface k : flat()) {
             k.setHostCard(host);
         }
     }
@@ -183,29 +221,33 @@ public class KeywordCollection implements ICardTraitChanges, Iterable<KeywordInt
 
     @Override
     public List<SpellAbility> applySpellAbility(List<SpellAbility> list) {
-        for (KeywordInterface k : getValues()) {
-            k.applySpellAbility(list);
+        final List<KeywordInterface> values = flat();
+        for (int i = 0; i < values.size(); i++) {
+            values.get(i).applySpellAbility(list);
         }
         return list;
     }
     @Override
     public List<Trigger> applyTrigger(List<Trigger> list) {
-        for (KeywordInterface k : getValues()) {
-            k.applyTrigger(list);
+        final List<KeywordInterface> values = flat();
+        for (int i = 0; i < values.size(); i++) {
+            values.get(i).applyTrigger(list);
         }
         return list;
     }
     @Override
     public List<ReplacementEffect> applyReplacementEffect(List<ReplacementEffect> list) {
-        for (KeywordInterface k : getValues()) {
-            k.applyReplacementEffect(list);
+        final List<KeywordInterface> values = flat();
+        for (int i = 0; i < values.size(); i++) {
+            values.get(i).applyReplacementEffect(list);
         }
         return list;
     }
     @Override
     public List<StaticAbility> applyStaticAbility(List<StaticAbility> list) {
-        for (KeywordInterface k : getValues()) {
-            k.applyStaticAbility(list);
+        final List<KeywordInterface> values = flat();
+        for (int i = 0; i < values.size(); i++) {
+            values.get(i).applyStaticAbility(list);
         }
         return list;
     }
@@ -226,6 +268,6 @@ public class KeywordCollection implements ICardTraitChanges, Iterable<KeywordInt
 
     @Override
     public Iterator<KeywordInterface> iterator() {
-        return this.map.values().iterator();
+        return flat().iterator();
     }
 }

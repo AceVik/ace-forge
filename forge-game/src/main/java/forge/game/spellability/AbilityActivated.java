@@ -125,6 +125,12 @@ public abstract class AbilityActivated extends SpellAbility implements Cloneable
     	return this.getRestrictions().checkZoneRestrictions(this.getHostCard(), this) &&
     		   this.getRestrictions().checkActivatorRestrictions(this.getHostCard(), this);
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean isPossible(final boolean canPlay) {
+        return isPossible();
+    }
     
     /** {@inheritDoc} */
     @Override

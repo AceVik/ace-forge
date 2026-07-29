@@ -17,6 +17,8 @@
  */
 package forge.game;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -91,12 +93,16 @@ public final class GameActionUtil {
         Card source = sa.getHostCard();
         final Game game = source.getGame();
 
-        if (sa.isSpell() && source.isInPlay()) {
+        // a permanent can neither be cast nor played as a land while it's already on the battlefield,
+        // so there's no point in looking for other ways to do it (modal double faced cards would
+        // otherwise pay for a full static ability recalculation on each check)
+        if ((sa.isSpell() || sa.isLandAbility()) && source.isInPlay()) {
             return alternatives;
         }
 
         if (sa.isSpell() || sa.isLandAbility()) {
             boolean lkicheck = false;
+            boolean staticCheck = false;
 
             Card newHost = sa.getAlternateHost(source);
             if (newHost != null) {
@@ -108,9 +114,14 @@ public final class GameActionUtil {
             if (lkicheck) {
                 // double freeze tracker, so it doesn't update view
                 game.getTracker().freeze();
-                source.clearStaticChangedCardKeywords(false);
-                CardCollection preList = new CardCollection(source);
-                game.getAction().checkStaticAbilities(false, Sets.newHashSet(source), preList);
+                // recalculating the static abilities is very expensive, so only do it when they
+                // are able to affect the alternate face at all
+                if (game.getAction().mayStaticAbilitiesAffect(source)) {
+                    source.clearStaticChangedCardKeywords(false);
+                    CardCollection preList = new CardCollection(source);
+                    game.getAction().checkStaticAbilities(false, Sets.newHashSet(source), preList);
+                    staticCheck = true;
+                }
             }
 
             // Alt Cost only for Basic Spells
@@ -262,6 +273,7 @@ public final class GameActionUtil {
                     stackCopy.clearStaticChangedCardKeywords(false);
                     CardCollection preList = new CardCollection(stackCopy);
                     game.getAction().checkStaticAbilities(false, Sets.newHashSet(stackCopy), preList);
+                    staticCheck = true;
 
                     stackCopy.setMayPlay(oldMayPlay);
 
@@ -282,7 +294,9 @@ public final class GameActionUtil {
 
             // reset static abilities
             if (lkicheck) {
-                game.getAction().checkStaticAbilities(false);
+                if (staticCheck) {
+                    game.getAction().checkStaticAbilities(false);
+                }
                 // clear delayed changes, this check should not have updated the view
                 game.getTracker().clearDelayed();
                 // need to unfreeze tracker
@@ -417,6 +431,7 @@ public final class GameActionUtil {
         Card source = sa.getHostCard();
         final Game game = source.getGame();
         boolean lkicheck = false;
+        boolean staticCheck = false;
 
         Card newHost = sa.getAlternateHost(source);
         if (newHost != null) {
@@ -428,13 +443,21 @@ public final class GameActionUtil {
         if (lkicheck) {
             // double freeze tracker, so it doesn't update view
             game.getTracker().freeze();
-            source.clearStaticChangedCardKeywords(false);
-            CardCollection preList = new CardCollection(source);
-            game.getAction().checkStaticAbilities(false, Sets.newHashSet(source), preList);
+            // recalculating the static abilities is very expensive, so only do it when they
+            // are able to affect the alternate face at all
+            if (game.getAction().mayStaticAbilitiesAffect(source)) {
+                source.clearStaticChangedCardKeywords(false);
+                CardCollection preList = new CardCollection(source);
+                game.getAction().checkStaticAbilities(false, Sets.newHashSet(source), preList);
+                staticCheck = true;
+            }
         }
 
-        final CardCollection costSources = new CardCollection(source);
-        costSources.addAll(game.getCardsIn(ZoneType.STATIC_ABILITIES_SOURCE_ZONES));
+        // this runs for every spell the AI considers, so avoid copying all cards of the game
+        // into yet another collection just to have the source card checked first
+        final Card costSource = source;
+        final Iterable<Card> costSources = Iterables.concat(ImmutableList.of(costSource),
+                Iterables.filter(game.getCardsIn(ZoneType.STATIC_ABILITIES_SOURCE_ZONES), c -> c != costSource));
         for (final Card ca : costSources) {
             for (final StaticAbility stAb : ca.getStaticAbilities()) {
                 if (!stAb.checkConditions(StaticAbilityMode.OptionalCost)) {
@@ -520,7 +543,9 @@ public final class GameActionUtil {
 
         // reset static abilities
         if (lkicheck) {
-            game.getAction().checkStaticAbilities(false);
+            if (staticCheck) {
+                game.getAction().checkStaticAbilities(false);
+            }
             // clear delayed changes, this check should not have updated the view
             game.getTracker().clearDelayed();
             // need to unfreeze tracker

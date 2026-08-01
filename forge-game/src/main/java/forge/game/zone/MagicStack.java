@@ -628,7 +628,9 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
             if (c.isLand()) {
                 count++;
             } else if (c.isArtifact() || c.isCreature()) {
-                if (!c.getManaAbilities().isEmpty()) {
+                String cName = c.getName() != null ? c.getName() : "";
+                boolean isTempToken = c.isToken() && ("Treasure".equalsIgnoreCase(cName) || "Gold".equalsIgnoreCase(cName) || cName.toLowerCase().contains("treasure"));
+                if (!isTempToken && !c.getManaAbilities().isEmpty()) {
                     count++;
                 }
             }
@@ -642,23 +644,29 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         BOSS_DOMINANT
     }
 
+    private static int calculatePlayerCreaturePower(Player p) {
+        int totalPower = 0;
+        for (Card c : p.getCardsIn(ZoneType.Battlefield)) {
+            if (c.isCreature()) {
+                boolean isNonAttacker = c.hasKeyword("Defender") || c.hasKeyword("CARDNAME can't attack.");
+                if (isNonAttacker) {
+                    if (c.getNetPower() >= 1) {
+                        totalPower += 1;
+                    }
+                } else {
+                    totalPower += Math.max(0, c.getNetPower());
+                }
+            }
+        }
+        return totalPower;
+    }
+
     public static DominanceState calculateDominanceState(Player player, Player aceVik) {
         float playerLifeRatio = (float) player.getLife() / Math.max(1, player.getStartingLife());
         float aceVikLifeRatio = (float) aceVik.getLife() / 128.0f;
 
-        int playerPower = 0;
-        for (Card c : player.getCardsIn(ZoneType.Battlefield)) {
-            if (c.isCreature() && !c.hasKeyword("Defender") && !c.hasKeyword("CARDNAME can't attack.")) {
-                playerPower += c.getNetPower();
-            }
-        }
-
-        int bossPower = 0;
-        for (Card c : aceVik.getCardsIn(ZoneType.Battlefield)) {
-            if (c.isCreature() && !c.hasKeyword("Defender") && !c.hasKeyword("CARDNAME can't attack.")) {
-                bossPower += c.getNetPower();
-            }
-        }
+        int playerPower = calculatePlayerCreaturePower(player);
+        int bossPower = calculatePlayerCreaturePower(aceVik);
 
         int playerHand = player.getCardsIn(ZoneType.Hand).size();
         int bossHand = aceVik.getCardsIn(ZoneType.Hand).size();

@@ -605,6 +605,22 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_ADD, aceVikPlayer.getName() + " casts " + counterName + " out of nowhere targeting " + playerSpell.getHostCard().getName() + "!"));
         
         this.add(saCounter);
+        spawnResonantCrystalToken(playerSpell.getActivatingPlayer());
+    }
+
+    private void spawnResonantCrystalToken(final Player targetPlayer) {
+        if (targetPlayer == null) return;
+        try {
+            forge.item.PaperCard pcToken = forge.StaticData.instance().getCommonCards().getUniqueByName("Resonant Crystal");
+            if (pcToken != null) {
+                Card tokenCard = Card.fromPaperCard(pcToken, targetPlayer);
+                tokenCard.setGamePieceType(forge.card.GamePieceType.TOKEN);
+                game.getAction().moveToPlay(tokenCard, targetPlayer, null, null);
+                game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_RESOLVE, targetPlayer.getName() + " receives a Resonant Crystal token (Vanishing 3, Shroud, Indestructible)!"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void triggerAceVikForceOfWill(final SpellAbility counterSpell, final Player aceVikPlayer) {
@@ -629,6 +645,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_ADD, aceVikPlayer.getName() + " casts Force of Will out of nowhere targeting " + counterSpell.getHostCard().getName() + "!"));
         
         this.add(saFoW);
+        spawnResonantCrystalToken(counterSpell.getActivatingPlayer());
     }
 
     private boolean isMassRemoval(final SpellAbility sp) {

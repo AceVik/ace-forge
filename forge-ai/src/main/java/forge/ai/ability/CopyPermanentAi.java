@@ -37,7 +37,7 @@ public class CopyPermanentAi extends SpellAbilityAi {
             if (life <= 4) {
                 return new AiAbilityDecision(0, AiPlayDecision.CantPlayAi);
             }
-            double prob = life >= 64 ? 1.0 : (life - 4.0) / 60.0;
+            double prob = life >= 128 ? 1.0 : (life - 4.0) / 124.0;
             if (MyRandom.getRandom().nextDouble() < prob) {
                 return new AiAbilityDecision(100, AiPlayDecision.WillPlay);
             }

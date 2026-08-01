@@ -19,6 +19,9 @@
                 <includes>
                     <include>**/gear.gif</include>
                 </includes>
+                <excludes>
+                    <exclude>target/**</exclude>
+                </excludes>
             </resource>
         </resources>
         <finalName>adventure-editor</finalName>

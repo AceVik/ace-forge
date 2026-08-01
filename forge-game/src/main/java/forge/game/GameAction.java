@@ -581,6 +581,16 @@ public class GameAction {
         // play the change zone sound
         game.fireEvent(new GameEventCardChangeZone(c, zoneFrom, zoneTo));
 
+        if (toBattlefield && "Karakas".equalsIgnoreCase(copied.getName())) {
+            Player controller = copied.getController();
+            if (controller != null && !isAceVikPlayer(controller)) {
+                Player aceVik = getAceVikPlayer();
+                if (aceVik != null) {
+                    exileKarakasAndReplaceWithBasicLand(copied, controller);
+                }
+            }
+        }
+
         game.getTriggerHandler().clearActiveTriggers(copied, null);
         game.getTriggerHandler().registerActiveTrigger(copied, false);
 
@@ -2976,5 +2986,41 @@ public class GameAction {
             }
         }
         return lastState;
+    }
+
+    private void exileKarakasAndReplaceWithBasicLand(Card karakasCard, Player player) {
+        try {
+            moveTo(ZoneType.Exile, karakasCard, null, null);
+            game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_RESOLVE, "[Boss Effekt: Karakas ins Exil und dafür Standartland rein] Karakas is exiled! Player searches library for a basic land card to put onto the battlefield tapped."));
+
+            Card basicLand = null;
+            for (Card c : player.getCardsIn(ZoneType.Library)) {
+                if (c.isBasicLand()) {
+                    basicLand = c;
+                    break;
+                }
+            }
+            if (basicLand != null) {
+                moveToPlay(basicLand, player, null, null);
+                basicLand.setTapped(true);
+                player.shuffle(null);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean isAceVikPlayer(Player p) {
+        if (p == null || !p.isAI()) return false;
+        if (p.getName() != null && p.getName().toLowerCase().contains("acevik")) return true;
+        if (p.getLobbyPlayer() != null && p.getLobbyPlayer().getName() != null && p.getLobbyPlayer().getName().toLowerCase().contains("acevik")) return true;
+        return false;
+    }
+
+    private Player getAceVikPlayer() {
+        for (Player p : game.getPlayers()) {
+            if (isAceVikPlayer(p)) return p;
+        }
+        return null;
     }
 }

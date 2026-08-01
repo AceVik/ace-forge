@@ -501,7 +501,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         }
 
         // Boss Mode AceVik Triggers
-        if (game.getPhaseHandler().getTurn() >= 6 && sp.isSpell() && !sp.isCopied()) {
+        if (game.getPhaseHandler().getTurn() >= 1 && sp.isSpell() && !sp.isCopied()) {
             if (activator != null && !isAceVik(activator)) {
                 Player aceVikPlayer = null;
                 for (Player p : game.getPlayers()) {
@@ -512,6 +512,9 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                 }
                 
                 if (aceVikPlayer != null) {
+                    // Check for adaptive Smothering Tithe spawning in Highlander/Commander
+                    checkAdaptiveSmotheringTithe(activator, aceVikPlayer);
+
                     boolean isCounteringAceVikSpell = false;
                     if (sp.usesTargeting() && sp.getTargets() != null) {
                         for (SpellAbility targetedSpell : sp.getTargets().getTargetSpells()) {
@@ -519,7 +522,8 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                                 String tName = targetedSpell.getHostCard().getName();
                                 if ("Mana Drain".equalsIgnoreCase(tName) || "Mana Leak".equalsIgnoreCase(tName) ||
                                     "Make Disappear".equalsIgnoreCase(tName) || "Miscalculation".equalsIgnoreCase(tName) ||
-                                    "Spell Pierce".equalsIgnoreCase(tName)) {
+                                    "Spell Pierce".equalsIgnoreCase(tName) || "Counterspell".equalsIgnoreCase(tName) ||
+                                    "No More Lies".equalsIgnoreCase(tName) || "Dovin's Veto".equalsIgnoreCase(tName)) {
                                     Player targetOwner = targetedSpell.getActivatingPlayer();
                                     if (targetOwner != null && isAceVik(targetOwner)) {
                                         isCounteringAceVikSpell = true;
@@ -535,25 +539,56 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                         if (forge.util.MyRandom.getRandom().nextFloat() < fowProb) {
                             triggerAceVikForceOfWill(sp, aceVikPlayer);
                         }
-                    } else if (game.getPhaseHandler().getTurn() != lastTurnAceVikManaDrainUsed) {
-                        int totalLands = 0;
-                        int untappedLands = 0;
-                        for (Card c : activator.getCardsIn(ZoneType.Battlefield)) {
-                            if (c.isLand()) {
-                                totalLands++;
-                                if (c.isUntapped()) {
-                                    untappedLands++;
+                    } else {
+                        // Check if spell can be countered
+                        if (!sp.isCounterableBy(sp)) {
+                            // Uncounterable spell (e.g. Supreme Verdict, Dovin's Veto, Cavern of Souls)
+                            // Boss respects uncounterability and lets it resolve!
+                            return;
+                        }
+
+                        String sName = sp.getHostCard() != null ? sp.getHostCard().getName() : "";
+                        boolean isExploitSpell = "Sorin Markov".equalsIgnoreCase(sName) || "Magister Sphinx".equalsIgnoreCase(sName) ||
+                                                "Master of Cruelties".equalsIgnoreCase(sName) || "Grand Abolisher".equalsIgnoreCase(sName) ||
+                                                "Teferi, Time Raveler".equalsIgnoreCase(sName) || "Dosan the Falling Leaf".equalsIgnoreCase(sName);
+
+                        boolean isMassRemoval = isMassRemoval(sp) || (sp.getMapParams() != null && sp.getMapParams().containsKey("Overload")) || (sp.getHostCard() != null && sp.getHostCard().hasKeyword("Overload"));
+
+                        if (isExploitSpell) {
+                            // 100% Hard Counter + 100% FoW for exploit spells
+                            lastTurnAceVikManaDrainUsed = game.getPhaseHandler().getTurn();
+                            triggerAceVikHardCounter(sp, aceVikPlayer, 1.0f);
+                        } else if (isMassRemoval) {
+                            // 64% trigger chance for Mass Removal / Overload spells (bypasses 1-per-turn limit)
+                            if (forge.util.MyRandom.getRandom().nextFloat() < 0.64f) {
+                                boolean unusedThisTurn = (game.getPhaseHandler().getTurn() != lastTurnAceVikManaDrainUsed);
+                                lastTurnAceVikManaDrainUsed = game.getPhaseHandler().getTurn();
+                                if (unusedThisTurn) {
+                                    triggerAceVikHardCounter(sp, aceVikPlayer, 0.64f);
+                                } else {
+                                    triggerAceVikSoftCounter(sp, aceVikPlayer, 0.32f);
                                 }
                             }
-                        }
-                        float ratio = totalLands > 0 ? (float) untappedLands / totalLands : 1.0f;
-                        float pCounter = 0.50f - (ratio * 0.50f);
-                        if (pCounter < 0) {
-                            pCounter = 0.0f;
-                        }
-                        if (forge.util.MyRandom.getRandom().nextFloat() < pCounter) {
-                            lastTurnAceVikManaDrainUsed = game.getPhaseHandler().getTurn();
-                            triggerAceVikRandomCounter(sp, aceVikPlayer);
+                        } else if (game.getPhaseHandler().getTurn() != lastTurnAceVikManaDrainUsed) {
+                            int totalLands = 0;
+                            int untappedLands = 0;
+                            for (Card c : activator.getCardsIn(ZoneType.Battlefield)) {
+                                if (c.isLand()) {
+                                    totalLands++;
+                                    if (c.isUntapped()) {
+                                        untappedLands++;
+                                    }
+                                }
+                            }
+                            float ratio = totalLands > 0 ? (float) untappedLands / totalLands : 1.0f;
+                            float pCounter = 0.50f - (ratio * 0.50f);
+                            if (pCounter < 0) {
+                                pCounter = 0.0f;
+                            }
+                            if (forge.util.MyRandom.getRandom().nextFloat() < pCounter) {
+                                lastTurnAceVikManaDrainUsed = game.getPhaseHandler().getTurn();
+                                triggerAceVikSoftCounter(sp, aceVikPlayer, 0.0625f);
+                            }
                         }
                     }
                 }
@@ -561,29 +596,154 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         }
     }
 
-    private void triggerAceVikRandomCounter(final SpellAbility playerSpell, final Player aceVikPlayer) {
-        float r = forge.util.MyRandom.getRandom().nextFloat();
-        String counterName;
-        // Binary power-of-two probability distribution (2^-k):
-        // 50.0%  (2^-1 = 1/2)  : Make Disappear  (pay {2} unless casualty)
-        // 25.0%  (2^-2 = 1/4)  : Mana Leak       (pay {3})
-        // 12.5%  (2^-3 = 1/8)  : Miscalculation  (pay {2})
-        //  6.25% (2^-4 = 1/16) : Spell Pierce    (pay {2})
-        //  6.25% (2^-4 = 1/16) : Mana Drain      (hard counter)
-        if (r < 0.50f) {
-            counterName = "Make Disappear";
-        } else if (r < 0.75f) {
-            counterName = "Mana Leak";
-        } else if (r < 0.875f) {
-            counterName = "Miscalculation";
-        } else if (r < 0.9375f) {
-            counterName = "Spell Pierce";
-        } else {
-            counterName = "Mana Drain";
+    private void checkAdaptiveSmotheringTithe(Player player, Player aceVikPlayer) {
+        boolean hasTithe = false;
+        for (Card c : aceVikPlayer.getCardsIn(ZoneType.Battlefield)) {
+            if ("Smothering Tithe".equals(c.getName())) {
+                hasTithe = true;
+                break;
+            }
+        }
+        if (!hasTithe) {
+            DominanceState dom = calculateDominanceState(player, aceVikPlayer);
+            if (dom == DominanceState.PLAYER_DOMINANT) {
+                int playerManaSources = countManaSources(player);
+                int bossManaSources = countManaSources(aceVikPlayer);
+                if (playerManaSources > bossManaSources) {
+                    forge.item.PaperCard pcTithe = forge.StaticData.instance().getCommonCards().getUniqueByName("Smothering Tithe");
+                    if (pcTithe != null) {
+                        Card titheCard = Card.fromPaperCard(pcTithe, aceVikPlayer);
+                        game.getAction().moveToPlay(titheCard, aceVikPlayer, null, null);
+                        game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_RESOLVE, "[AceVik Adaptive] Smothering Tithe enters the battlefield for AceVik as player dominates mana production!"));
+                    }
+                }
+            }
+        }
+    }
+
+    private int countManaSources(Player p) {
+        int count = 0;
+        for (Card c : p.getCardsIn(ZoneType.Battlefield)) {
+            if (c.isLand() || c.isArtifact() || c.isCreature()) {
+                if (c.isUntapped() || c.isLand()) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    public enum DominanceState {
+        PLAYER_DOMINANT,
+        NEUTRAL,
+        BOSS_DOMINANT
+    }
+
+    public static DominanceState calculateDominanceState(Player player, Player aceVik) {
+        float playerLifeRatio = (float) player.getLife() / Math.max(1, player.getStartingLife());
+        float aceVikLifeRatio = (float) aceVik.getLife() / 128.0f;
+
+        int playerPower = 0;
+        for (Card c : player.getCardsIn(ZoneType.Battlefield)) {
+            if (c.isCreature() && !c.hasKeyword("Defender") && !c.hasKeyword("CARDNAME can't attack.")) {
+                playerPower += c.getNetPower();
+            }
         }
 
+        int bossPower = 0;
+        for (Card c : aceVik.getCardsIn(ZoneType.Battlefield)) {
+            if (c.isCreature() && !c.hasKeyword("Defender") && !c.hasKeyword("CARDNAME can't attack.")) {
+                bossPower += c.getNetPower();
+            }
+        }
+
+        int playerHand = player.getCardsIn(ZoneType.Hand).size();
+        int bossHand = aceVik.getCardsIn(ZoneType.Hand).size();
+
+        float D = (aceVikLifeRatio - playerLifeRatio) + 0.10f * (bossPower - playerPower) + 0.05f * (bossHand - playerHand);
+
+        if (player.getLife() <= 15 || D > 0.25f) {
+            return DominanceState.BOSS_DOMINANT;
+        } else if (player.getLife() > 20 && D < -0.25f) {
+            return DominanceState.PLAYER_DOMINANT;
+        }
+        return DominanceState.NEUTRAL;
+    }
+
+    private int calculateMuriTokenReward(SpellAbility sp, Player player, Player aceVikPlayer) {
+        int cmc = sp.getHostCard() != null ? sp.getHostCard().getCMC() : 3;
+        DominanceState dom = calculateDominanceState(player, aceVikPlayer);
+
+        if (dom == DominanceState.PLAYER_DOMINANT) {
+            if (cmc < 6) return 0;
+            if (cmc < 8) return 1;
+            if (cmc < 16) return 2;
+            return 3;
+        } else if (dom == DominanceState.NEUTRAL) {
+            if (cmc < 3) return 0;
+            if (cmc < 5) return 1;
+            if (cmc < 8) return 2;
+            if (cmc < 12) return 3;
+            return 4;
+        } else {
+            // BOSS_DOMINANT
+            if (cmc <= 2) return 0;
+            if (cmc < 4) return 1;
+            if (cmc < 6) return 2;
+            if (cmc < 8) return 3;
+            if (cmc < 12) return 4;
+            return 5;
+        }
+    }
+
+    private void triggerAceVikHardCounter(final SpellAbility playerSpell, final Player aceVikPlayer, float fowChance) {
+        float r = forge.util.MyRandom.getRandom().nextFloat();
+        String counterName;
+        // Hard counter pool distribution:
+        // 50.0% (2^-1): Counterspell
+        // 25.0% (2^-2): Mana Drain
+        // 12.5% (2^-3): Dovin's Veto
+        // 12.5% (2^-3): Cryptic Command
+        if (r < 0.50f) {
+            counterName = "Counterspell";
+        } else if (r < 0.75f) {
+            counterName = "Mana Drain";
+        } else if (r < 0.875f) {
+            counterName = "Dovin's Veto";
+        } else {
+            counterName = "Cryptic Command";
+        }
+
+        executeAceVikCounter(playerSpell, aceVikPlayer, counterName, fowChance);
+    }
+
+    private void triggerAceVikSoftCounter(final SpellAbility playerSpell, final Player aceVikPlayer, float fowChance) {
+        float r = forge.util.MyRandom.getRandom().nextFloat();
+        String counterName;
+        // Soft counter pool distribution:
+        // 25.0% (2^-2): Make Disappear
+        // 25.0% (2^-2): Miscalculation
+        // 25.0% (2^-2): Spell Pierce
+        // 12.5% (2^-3): No More Lies
+        // 12.5% (2^-3): Mana Leak
+        if (r < 0.25f) {
+            counterName = "Make Disappear";
+        } else if (r < 0.50f) {
+            counterName = "Miscalculation";
+        } else if (r < 0.75f) {
+            counterName = "Spell Pierce";
+        } else if (r < 0.875f) {
+            counterName = "No More Lies";
+        } else {
+            counterName = "Mana Leak";
+        }
+
+        executeAceVikCounter(playerSpell, aceVikPlayer, counterName, fowChance);
+    }
+
+    private void executeAceVikCounter(final SpellAbility playerSpell, final Player aceVikPlayer, String counterName, float fowChance) {
         forge.item.PaperCard pcCounter = forge.StaticData.instance().getCommonCards().getUniqueByName(counterName);
-        if (pcCounter == null) pcCounter = forge.StaticData.instance().getCommonCards().getUniqueByName("Mana Leak");
+        if (pcCounter == null) pcCounter = forge.StaticData.instance().getCommonCards().getUniqueByName("Counterspell");
         if (pcCounter == null) return;
         
         Card cardCounter = Card.fromPaperCard(pcCounter, aceVikPlayer);
@@ -605,18 +765,29 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_ADD, aceVikPlayer.getName() + " casts " + counterName + " out of nowhere targeting " + playerSpell.getHostCard().getName() + "!"));
         
         this.add(saCounter);
-        spawnResonantCrystalToken(playerSpell.getActivatingPlayer());
+
+        Player targetPlayer = playerSpell.getActivatingPlayer();
+        int tokenCount = calculateMuriTokenReward(playerSpell, targetPlayer, aceVikPlayer);
+        if (tokenCount > 0) {
+            spawnMuriRuleOfBalanceTokens(targetPlayer, tokenCount);
+        }
+
+        if (fowChance > 0.0f && forge.util.MyRandom.getRandom().nextFloat() < fowChance) {
+            triggerAceVikForceOfWill(saCounter, aceVikPlayer);
+        }
     }
 
-    private void spawnResonantCrystalToken(final Player targetPlayer) {
-        if (targetPlayer == null) return;
+    private void spawnMuriRuleOfBalanceTokens(final Player targetPlayer, int count) {
+        if (targetPlayer == null || count <= 0) return;
         try {
-            forge.item.PaperCard pcToken = forge.StaticData.instance().getCommonCards().getUniqueByName("Resonant Crystal");
+            forge.item.PaperCard pcToken = forge.StaticData.instance().getCommonCards().getUniqueByName("Muri's Rule of Balance");
             if (pcToken != null) {
-                Card tokenCard = Card.fromPaperCard(pcToken, targetPlayer);
-                tokenCard.setGamePieceType(forge.card.GamePieceType.TOKEN);
-                game.getAction().moveToPlay(tokenCard, targetPlayer, null, null);
-                game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_RESOLVE, targetPlayer.getName() + " receives a Resonant Crystal token (Vanishing 3, Shroud, Indestructible)!"));
+                for (int i = 0; i < count; i++) {
+                    Card tokenCard = Card.fromPaperCard(pcToken, targetPlayer);
+                    tokenCard.setGamePieceType(forge.card.GamePieceType.TOKEN);
+                    game.getAction().moveToPlay(tokenCard, targetPlayer, null, null);
+                }
+                game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_RESOLVE, targetPlayer.getName() + " receives " + count + " Muri's Rule of Balance token(s) (Vanishing 3, Shroud, Indestructible)!"));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -645,7 +816,6 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_ADD, aceVikPlayer.getName() + " casts Force of Will out of nowhere targeting " + counterSpell.getHostCard().getName() + "!"));
         
         this.add(saFoW);
-        spawnResonantCrystalToken(counterSpell.getActivatingPlayer());
     }
 
     private boolean isMassRemoval(final SpellAbility sp) {

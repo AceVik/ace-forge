@@ -152,82 +152,40 @@ public class MulliganService {
                         isOppCommander = true;
                     }
 
-                    if (isOppCommander) {
-                        // 1. Replace Karakas with Smothering Tithe
-                        forge.game.card.Card karakasCard = null;
-                        for (forge.game.card.Card c : p.getCardsIn(forge.game.zone.ZoneType.Library)) {
-                            if ("Karakas".equals(c.getName())) {
-                                karakasCard = c;
-                                break;
-                            }
-                        }
-                        if (karakasCard == null) {
-                            for (forge.game.card.Card c : p.getCardsIn(forge.game.zone.ZoneType.Hand)) {
-                                if ("Karakas".equals(c.getName())) {
-                                    karakasCard = c;
-                                    break;
-                                }
-                            }
-                        }
-                        if (karakasCard != null) {
-                            forge.game.zone.Zone originZone = karakasCard.getZone();
-                            if (originZone != null) {
-                                originZone.remove(karakasCard);
-                                karakasCard.setZone(null);
-                            }
-                            forge.item.PaperCard pcTithe = forge.StaticData.instance().getCommonCards().getUniqueByName("Smothering Tithe");
-                            if (pcTithe != null) {
-                                forge.game.card.Card titheCard = forge.game.card.Card.fromPaperCard(pcTithe, p);
-                                if (originZone != null && originZone.getZoneType() == forge.game.zone.ZoneType.Hand) {
-                                    game.getAction().moveTo(forge.game.zone.ZoneType.Hand, titheCard, null, null);
-                                } else {
-                                    game.getAction().moveTo(forge.game.zone.ZoneType.Library, titheCard, null, null);
-                                }
-                            }
-                        }
+                    int oppDeckSize = opp != null ? opp.getCardsIn(forge.game.zone.ZoneType.Library).size() + opp.getCardsIn(forge.game.zone.ZoneType.Hand).size() : 60;
+                    boolean isOppCommanderOr99 = isOppCommander || (oppDeckSize >= 99);
 
-                        // 2. Set Aminatou, the Fateshifter as Commander for AceVik
-                        forge.game.card.Card aminatouCard = null;
-                        for (forge.game.card.Card c : p.getCardsIn(forge.game.zone.ZoneType.Library)) {
-                            if ("Aminatou, the Fateshifter".equals(c.getName())) {
-                                aminatouCard = c;
+                    if (isOppCommanderOr99) {
+                        // Set Friendship Web as Commander for AceVik
+                        forge.game.card.Card webCommander = null;
+                        for (forge.game.card.Card c : p.getCardsIn(forge.game.zone.ZoneType.Command)) {
+                            if ("Friendship Web".equals(c.getName())) {
+                                webCommander = c;
                                 break;
                             }
                         }
-                        if (aminatouCard == null) {
-                            for (forge.game.card.Card c : p.getCardsIn(forge.game.zone.ZoneType.Hand)) {
-                                if ("Aminatou, the Fateshifter".equals(c.getName())) {
-                                    aminatouCard = c;
-                                    break;
-                                }
+                        if (webCommander == null) {
+                            forge.item.PaperCard pcWebCommander = forge.StaticData.instance().getCommonCards().getUniqueByName("Friendship Web");
+                            if (pcWebCommander != null) {
+                                webCommander = forge.game.card.Card.fromPaperCard(pcWebCommander, p);
                             }
                         }
-                        if (aminatouCard == null) {
-                            for (forge.game.card.Card c : p.getCardsIn(forge.game.zone.ZoneType.Command)) {
-                                if ("Aminatou, the Fateshifter".equals(c.getName())) {
-                                    aminatouCard = c;
-                                    break;
-                                }
-                            }
+                        if (webCommander != null) {
+                            game.getAction().moveTo(forge.game.zone.ZoneType.Command, webCommander, null, null);
+                            p.addCommander(webCommander);
                         }
-                        if (aminatouCard == null) {
-                            forge.item.PaperCard pcAminatou = forge.StaticData.instance().getCommonCards().getUniqueByName("Aminatou, the Fateshifter");
-                            if (pcAminatou != null) {
-                                aminatouCard = forge.game.card.Card.fromPaperCard(pcAminatou, p);
-                            }
-                        }
-                        if (aminatouCard != null) {
-                            game.getAction().moveTo(forge.game.zone.ZoneType.Command, aminatouCard, null, null);
-                            p.addCommander(aminatouCard);
+                    } else {
+                        // For standard decks (<99 cards), spawn Smothering Tithe on the battlefield at game start
+                        forge.item.PaperCard pcTithe = forge.StaticData.instance().getCommonCards().getUniqueByName("Smothering Tithe");
+                        if (pcTithe != null) {
+                            forge.game.card.Card titheCard = forge.game.card.Card.fromPaperCard(pcTithe, p);
+                            game.getAction().moveToPlay(titheCard, p, null, null);
                         }
                     }
 
                     // Set starting life to 128 (2^7)
                     p.setStartingLife(128);
                     p.setLife(128, null);
-
-                    int oppDeckSize = opp != null ? opp.getCardsIn(forge.game.zone.ZoneType.Library).size() + opp.getCardsIn(forge.game.zone.ZoneType.Hand).size() : 60;
-                    boolean isOppCommanderOr99 = isOppCommander || (oppDeckSize >= 99);
 
                     // Spawn only Raffine's Tower (untapped normally, tapped if Commander or deck >= 99 cards)
                     spawnLand(p, "Raffine's Tower", !isOppCommanderOr99);

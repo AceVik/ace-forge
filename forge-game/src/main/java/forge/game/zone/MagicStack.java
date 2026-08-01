@@ -555,18 +555,18 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                         boolean isMassRemoval = isMassRemoval(sp) || (sp.getMapParams() != null && sp.getMapParams().containsKey("Overload")) || (sp.getHostCard() != null && sp.getHostCard().hasKeyword("Overload"));
 
                         if (isExploitSpell) {
-                            // 100% Hard Counter + 100% FoW for exploit spells
+                            // 100% Hard Counter for exploit spells
                             lastTurnAceVikManaDrainUsed = game.getPhaseHandler().getTurn();
-                            triggerAceVikHardCounter(sp, aceVikPlayer, 1.0f);
+                            triggerAceVikHardCounter(sp, aceVikPlayer);
                         } else if (isMassRemoval) {
                             // 64% trigger chance for Mass Removal / Overload spells (bypasses 1-per-turn limit)
                             if (forge.util.MyRandom.getRandom().nextFloat() < 0.64f) {
                                 boolean unusedThisTurn = (game.getPhaseHandler().getTurn() != lastTurnAceVikManaDrainUsed);
                                 lastTurnAceVikManaDrainUsed = game.getPhaseHandler().getTurn();
                                 if (unusedThisTurn) {
-                                    triggerAceVikHardCounter(sp, aceVikPlayer, 0.64f);
+                                    triggerAceVikHardCounter(sp, aceVikPlayer);
                                 } else {
-                                    triggerAceVikSoftCounter(sp, aceVikPlayer, 0.32f);
+                                    triggerAceVikSoftCounter(sp, aceVikPlayer);
                                 }
                             }
                         } else if (game.getPhaseHandler().getTurn() != lastTurnAceVikManaDrainUsed) {
@@ -587,7 +587,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                             }
                             if (forge.util.MyRandom.getRandom().nextFloat() < pCounter) {
                                 lastTurnAceVikManaDrainUsed = game.getPhaseHandler().getTurn();
-                                triggerAceVikSoftCounter(sp, aceVikPlayer, 0.0625f);
+                                triggerAceVikSoftCounter(sp, aceVikPlayer);
                             }
                         }
                     }
@@ -715,7 +715,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         }
     }
 
-    private void triggerAceVikHardCounter(final SpellAbility playerSpell, final Player aceVikPlayer, float fowChance) {
+    private void triggerAceVikHardCounter(final SpellAbility playerSpell, final Player aceVikPlayer) {
         float r = forge.util.MyRandom.getRandom().nextFloat();
         String counterName;
         // Hard counter pool distribution:
@@ -733,10 +733,10 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
             counterName = "Cryptic Command";
         }
 
-        executeAceVikCounter(playerSpell, aceVikPlayer, counterName, fowChance);
+        executeAceVikCounter(playerSpell, aceVikPlayer, counterName);
     }
 
-    private void triggerAceVikSoftCounter(final SpellAbility playerSpell, final Player aceVikPlayer, float fowChance) {
+    private void triggerAceVikSoftCounter(final SpellAbility playerSpell, final Player aceVikPlayer) {
         float r = forge.util.MyRandom.getRandom().nextFloat();
         String counterName;
         // Soft counter pool distribution:
@@ -757,10 +757,10 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
             counterName = "Mana Leak";
         }
 
-        executeAceVikCounter(playerSpell, aceVikPlayer, counterName, fowChance);
+        executeAceVikCounter(playerSpell, aceVikPlayer, counterName);
     }
 
-    private void executeAceVikCounter(final SpellAbility playerSpell, final Player aceVikPlayer, String counterName, float fowChance) {
+    private void executeAceVikCounter(final SpellAbility playerSpell, final Player aceVikPlayer, String counterName) {
         forge.item.PaperCard pcCounter = forge.StaticData.instance().getCommonCards().getUniqueByName(counterName);
         if (pcCounter == null) pcCounter = forge.StaticData.instance().getCommonCards().getUniqueByName("Counterspell");
         if (pcCounter == null) return;
@@ -790,10 +790,6 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         if (tokenCount > 0) {
             saCounter.getMapParams().put("AceVikPendingTokens", String.valueOf(tokenCount));
             saCounter.getMapParams().put("AceVikTargetPlayer", targetPlayer.getName());
-        }
-
-        if (fowChance > 0.0f && forge.util.MyRandom.getRandom().nextFloat() < fowChance) {
-            triggerAceVikForceOfWill(playerSpell, aceVikPlayer);
         }
     }
 

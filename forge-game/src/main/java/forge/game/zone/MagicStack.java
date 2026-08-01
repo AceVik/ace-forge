@@ -518,7 +518,8 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                             if (targetedSpell.getHostCard() != null) {
                                 String tName = targetedSpell.getHostCard().getName();
                                 if ("Mana Drain".equalsIgnoreCase(tName) || "Mana Leak".equalsIgnoreCase(tName) ||
-                                    "Make Disappear".equalsIgnoreCase(tName) || "Miscalculation".equalsIgnoreCase(tName)) {
+                                    "Make Disappear".equalsIgnoreCase(tName) || "Miscalculation".equalsIgnoreCase(tName) ||
+                                    "Spell Pierce".equalsIgnoreCase(tName)) {
                                     Player targetOwner = targetedSpell.getActivatingPlayer();
                                     if (targetOwner != null && isAceVik(targetOwner)) {
                                         isCounteringAceVikSpell = true;
@@ -530,7 +531,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                     }
                     
                     if (isCounteringAceVikSpell) {
-                        float fowProb = 0.06f;
+                        float fowProb = 0.0625f; // 2^-4 = 6.25%
                         if (forge.util.MyRandom.getRandom().nextFloat() < fowProb) {
                             triggerAceVikForceOfWill(sp, aceVikPlayer);
                         }
@@ -546,7 +547,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                             }
                         }
                         float ratio = totalLands > 0 ? (float) untappedLands / totalLands : 1.0f;
-                        float pCounter = 0.64f - ratio;
+                        float pCounter = 0.50f - (ratio * 0.50f);
                         if (pCounter < 0) {
                             pCounter = 0.0f;
                         }
@@ -561,15 +562,22 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
     }
 
     private void triggerAceVikRandomCounter(final SpellAbility playerSpell, final Player aceVikPlayer) {
-        String[] pool = new String[] { "Make Disappear", "Mana Leak", "Miscalculation", "Mana Drain" };
         float r = forge.util.MyRandom.getRandom().nextFloat();
         String counterName;
-        if (r < 0.35f) {
+        // Binary power-of-two probability distribution (2^-k):
+        // 50.0%  (2^-1 = 1/2)  : Make Disappear  (pay {2} unless casualty)
+        // 25.0%  (2^-2 = 1/4)  : Mana Leak       (pay {3})
+        // 12.5%  (2^-3 = 1/8)  : Miscalculation  (pay {2})
+        //  6.25% (2^-4 = 1/16) : Spell Pierce    (pay {2})
+        //  6.25% (2^-4 = 1/16) : Mana Drain      (hard counter)
+        if (r < 0.50f) {
             counterName = "Make Disappear";
-        } else if (r < 0.65f) {
+        } else if (r < 0.75f) {
             counterName = "Mana Leak";
-        } else if (r < 0.85f) {
+        } else if (r < 0.875f) {
             counterName = "Miscalculation";
+        } else if (r < 0.9375f) {
+            counterName = "Spell Pierce";
         } else {
             counterName = "Mana Drain";
         }

@@ -222,14 +222,15 @@ public class MulliganService {
                         }
                     }
 
-                    // Always spawn Raffine's Tower (untapped)
-                    spawnUntappedLand(p, "Raffine's Tower");
+                    // Set starting life to 128 (2^7)
+                    p.setStartingLife(128);
+                    p.setLife(128, null);
 
-                    if (!isOppCommander) {
-                        // Spawn Reflecting Pool and Cavern of Souls (untapped)
-                        spawnUntappedLand(p, "Reflecting Pool");
-                        spawnUntappedLand(p, "Cavern of Souls");
-                    }
+                    int oppDeckSize = opp != null ? opp.getCardsIn(forge.game.zone.ZoneType.Library).size() + opp.getCardsIn(forge.game.zone.ZoneType.Hand).size() : 60;
+                    boolean isOppCommanderOr99 = isOppCommander || (oppDeckSize >= 99);
+
+                    // Spawn only Raffine's Tower (untapped normally, tapped if Commander or deck >= 99 cards)
+                    spawnLand(p, "Raffine's Tower", !isOppCommanderOr99);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -259,12 +260,12 @@ public class MulliganService {
         return false;
     }
 
-    private void spawnUntappedLand(Player p, String landName) {
+    private void spawnLand(Player p, String landName, boolean untapped) {
         forge.item.PaperCard pc = forge.StaticData.instance().getCommonCards().getUniqueByName(landName);
         if (pc != null) {
             forge.game.card.Card card = forge.game.card.Card.fromPaperCard(pc, p);
             game.getAction().moveToPlay(card, p, null, null);
-            card.untap();
+            card.setTapped(!untapped);
         }
     }
 }

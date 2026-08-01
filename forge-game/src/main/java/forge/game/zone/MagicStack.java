@@ -597,6 +597,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
     }
 
     private void checkAdaptiveSmotheringTithe(Player player, Player aceVikPlayer) {
+        if (player == null || aceVikPlayer == null) return;
         boolean hasTithe = false;
         for (Card c : aceVikPlayer.getCardsIn(ZoneType.Battlefield)) {
             if ("Smothering Tithe".equals(c.getName())) {
@@ -614,18 +615,20 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                     if (pcTithe != null) {
                         Card titheCard = Card.fromPaperCard(pcTithe, aceVikPlayer);
                         game.getAction().moveToPlay(titheCard, aceVikPlayer, null, null);
-                        game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_RESOLVE, "[AceVik Adaptive] Smothering Tithe enters the battlefield for AceVik as player dominates mana production!"));
+                        game.fireEvent(new GameEventAddLog(forge.game.GameLogEntryType.STACK_RESOLVE, "[AceVik Adaptive] Smothering Tithe enters the battlefield for AceVik as player dominates board and mana production!"));
                     }
                 }
             }
         }
     }
 
-    private int countManaSources(Player p) {
+    private static int countManaSources(Player p) {
         int count = 0;
         for (Card c : p.getCardsIn(ZoneType.Battlefield)) {
-            if (c.isLand() || c.isArtifact() || c.isCreature()) {
-                if (c.isUntapped() || c.isLand()) {
+            if (c.isLand()) {
+                count++;
+            } else if (c.isArtifact() || c.isCreature()) {
+                if (!c.getManaAbilities().isEmpty()) {
                     count++;
                 }
             }
@@ -662,9 +665,9 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
 
         float D = (aceVikLifeRatio - playerLifeRatio) + 0.10f * (bossPower - playerPower) + 0.05f * (bossHand - playerHand);
 
-        if (player.getLife() <= 15 || D > 0.25f) {
+        if (player.getLife() <= 10 || D > 0.25f) {
             return DominanceState.BOSS_DOMINANT;
-        } else if (player.getLife() > 20 && D < -0.25f) {
+        } else if (D < -0.20f || playerPower >= bossPower + 10) {
             return DominanceState.PLAYER_DOMINANT;
         }
         return DominanceState.NEUTRAL;

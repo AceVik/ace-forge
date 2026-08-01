@@ -644,17 +644,25 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         BOSS_DOMINANT
     }
 
+    public static int getPermanentPower(Card c) {
+        if (c == null || !c.isCreature()) return 0;
+        Card.StatBreakdown breakdown = c.getNetPowerBreakdown();
+        if (breakdown == null) return Math.max(0, c.getNetPower());
+        return breakdown.currentValue + breakdown.bonusFromCounters;
+    }
+
     private static int calculatePlayerCreaturePower(Player p) {
         int totalPower = 0;
         for (Card c : p.getCardsIn(ZoneType.Battlefield)) {
             if (c.isCreature()) {
+                int permPower = getPermanentPower(c);
                 boolean isNonAttacker = c.hasKeyword("Defender") || c.hasKeyword("CARDNAME can't attack.");
                 if (isNonAttacker) {
-                    if (c.getNetPower() >= 1) {
+                    if (permPower >= 1) {
                         totalPower += 1;
                     }
                 } else {
-                    totalPower += Math.max(0, c.getNetPower());
+                    totalPower += Math.max(0, permPower);
                 }
             }
         }

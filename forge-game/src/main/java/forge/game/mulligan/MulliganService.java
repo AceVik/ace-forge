@@ -125,9 +125,10 @@ public class MulliganService {
                         game.getAction().moveToPlay(card, p, null, null);
                         card.setCounters(forge.game.card.CounterEnumType.LOYALTY, 4);
                     }
+                    forge.game.card.Card cardWeb = null;
                     forge.item.PaperCard pcWeb = forge.StaticData.instance().getCommonCards().getUniqueByName("Friendship Web");
                     if (pcWeb != null) {
-                        forge.game.card.Card cardWeb = forge.game.card.Card.fromPaperCard(pcWeb, p);
+                        cardWeb = forge.game.card.Card.fromPaperCard(pcWeb, p);
                         game.getAction().moveToPlay(cardWeb, p, null, null);
                     }
 
@@ -156,23 +157,27 @@ public class MulliganService {
                     boolean isOppCommanderOr99 = isOppCommander || (oppDeckSize >= 99);
 
                     if (isOppCommanderOr99) {
-                        // Set Friendship Web as Commander for AceVik
-                        forge.game.card.Card webCommander = null;
-                        for (forge.game.card.Card c : p.getCardsIn(forge.game.zone.ZoneType.Command)) {
-                            if ("Friendship Web".equals(c.getName())) {
-                                webCommander = c;
-                                break;
+                        // 1. Set Friendship Web (already on battlefield) as Commander for AceVik without creating a duplicate in Command Zone
+                        if (cardWeb != null) {
+                            cardWeb.setCommander(true);
+                            p.addCommander(cardWeb);
+                        }
+
+                        // 2. Ensure AceVik NEVER has Karakas in Commander mode (remove all Karakas cards from library/hand/deck)
+                        for (forge.game.card.Card c : new java.util.ArrayList<>(p.getCardsIn(forge.game.zone.ZoneType.Library))) {
+                            if ("Karakas".equalsIgnoreCase(c.getName())) {
+                                if (c.getZone() != null) { c.getZone().remove(c); c.setZone(null); }
                             }
                         }
-                        if (webCommander == null) {
-                            forge.item.PaperCard pcWebCommander = forge.StaticData.instance().getCommonCards().getUniqueByName("Friendship Web");
-                            if (pcWebCommander != null) {
-                                webCommander = forge.game.card.Card.fromPaperCard(pcWebCommander, p);
+                        for (forge.game.card.Card c : new java.util.ArrayList<>(p.getCardsIn(forge.game.zone.ZoneType.Hand))) {
+                            if ("Karakas".equalsIgnoreCase(c.getName())) {
+                                if (c.getZone() != null) { c.getZone().remove(c); c.setZone(null); }
                             }
                         }
-                        if (webCommander != null) {
-                            game.getAction().moveTo(forge.game.zone.ZoneType.Command, webCommander, null, null);
-                            p.addCommander(webCommander);
+                        for (forge.game.card.Card c : new java.util.ArrayList<>(p.getCardsIn(forge.game.zone.ZoneType.Command))) {
+                            if ("Karakas".equalsIgnoreCase(c.getName())) {
+                                if (c.getZone() != null) { c.getZone().remove(c); c.setZone(null); }
+                            }
                         }
                     } else {
                         // For standard decks (<99 cards), spawn Smothering Tithe on the battlefield at game start

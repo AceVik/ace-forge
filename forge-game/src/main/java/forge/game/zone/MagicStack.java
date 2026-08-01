@@ -769,7 +769,8 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         Player targetPlayer = playerSpell.getActivatingPlayer();
         int tokenCount = calculateMuriTokenReward(playerSpell, targetPlayer, aceVikPlayer);
         if (tokenCount > 0) {
-            spawnMuriRuleOfBalanceTokens(targetPlayer, tokenCount);
+            saCounter.getMapParams().put("AceVikPendingTokens", String.valueOf(tokenCount));
+            saCounter.getMapParams().put("AceVikTargetPlayer", targetPlayer.getName());
         }
 
         if (fowChance > 0.0f && forge.util.MyRandom.getRandom().nextFloat() < fowChance) {
@@ -987,6 +988,25 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
 
         if (si != null) {
             remove(si);
+        }
+
+        if (!fizzle && sa.getMapParams() != null && sa.getMapParams().containsKey("AceVikPendingTokens")) {
+            try {
+                int count = Integer.parseInt(sa.getMapParams().get("AceVikPendingTokens"));
+                String pName = sa.getMapParams().get("AceVikTargetPlayer");
+                Player targetPlayer = null;
+                for (Player p : game.getPlayers()) {
+                    if (p.getName().equalsIgnoreCase(pName)) {
+                        targetPlayer = p;
+                        break;
+                    }
+                }
+                if (targetPlayer != null && count > 0) {
+                    spawnMuriRuleOfBalanceTokens(targetPlayer, count);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         // After SA resolves we have to do a handful of things

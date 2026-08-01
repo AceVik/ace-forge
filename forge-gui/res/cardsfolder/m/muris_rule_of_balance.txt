@@ -1,0 +1,12 @@
+Name:Muri's Rule of Balance
+ManaCost:no cost
+Types:Token Artifact
+K:Vanishing:3
+K:Shroud
+K:Indestructible
+A:AB$ Charm | Cost$ T Sac<1/CARDNAME> | Choices$ DBGainLife,DBDraw,DBManaAny,DBManaColorless | SpellDescription$ Choose one — You gain 5 life; or draw a card; or add one mana of any color; or add {C}{C}.
+SVar:DBGainLife:DB$ GainLife | LifeAmount$ 5 | SpellDescription$ You gain 5 life.
+SVar:DBDraw:DB$ Draw | NumCards$ 1 | SpellDescription$ Draw a card.
+SVar:DBManaAny:DB$ Mana | Produced$ Any | Amount$ 1 | SpellDescription$ Add one mana of any color.
+SVar:DBManaColorless:DB$ Mana | Produced$ C | Amount$ 2 | SpellDescription$ Add {C}{C}.
+Oracle:Vanishing 3, shroud, indestructible\n{T}, Sacrifice Muri's Rule of Balance: Choose one —\n• You gain 5 life.\n• Draw a card.\n• Add one mana of any color.\n• Add {C}{C}.\n"I pass the turn, nothing's holding me by the balls." — Muri

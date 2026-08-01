@@ -156,14 +156,14 @@ public class MulliganService {
                     int oppDeckSize = opp != null ? opp.getCardsIn(forge.game.zone.ZoneType.Library).size() + opp.getCardsIn(forge.game.zone.ZoneType.Hand).size() : 60;
                     boolean isOppCommanderOr99 = isOppCommander || (oppDeckSize >= 99);
 
-                    if (isOppCommanderOr99) {
+                    if (isOppCommander) {
                         // 1. Set Friendship Web (already on battlefield) as Commander for AceVik without creating a duplicate in Command Zone
                         if (cardWeb != null) {
                             cardWeb.setCommander(true);
                             p.addCommander(cardWeb);
                         }
 
-                        // 2. Ensure AceVik NEVER has Karakas in Commander mode (remove all Karakas cards from library/hand/deck)
+                        // 2. Ensure AceVik NEVER has Karakas in Commander mode (allowed in Highlander without Commander)
                         for (forge.game.card.Card c : new java.util.ArrayList<>(p.getCardsIn(forge.game.zone.ZoneType.Library))) {
                             if ("Karakas".equalsIgnoreCase(c.getName())) {
                                 if (c.getZone() != null) { c.getZone().remove(c); c.setZone(null); }

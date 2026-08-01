@@ -793,7 +793,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         }
 
         if (fowChance > 0.0f && forge.util.MyRandom.getRandom().nextFloat() < fowChance) {
-            triggerAceVikForceOfWill(saCounter, aceVikPlayer);
+            triggerAceVikForceOfWill(playerSpell, aceVikPlayer);
         }
     }
 

@@ -114,7 +114,7 @@ if [ "$REBUILD" = true ]; then
 fi
 
 # Set Java options
-JAVA_OPTS=("-Xmx8192m" "-Xss4m")
+JAVA_OPTS=("-Xmx32768m" "-Xss8m")
 if [ "$DEBUG" = true ]; then
     echo "Starting in DEBUG mode (JDWP agent listening on 127.0.0.1:5005)..."
     JAVA_OPTS+=("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=127.0.0.1:5005")

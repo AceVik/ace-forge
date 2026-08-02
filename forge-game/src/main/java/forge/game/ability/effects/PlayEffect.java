@@ -171,7 +171,7 @@ public class PlayEffect extends SpellAbilityEffect {
             // filter only cards that didn't change zones
             for (Card c : getTargetCards(sa)) {
                 Card gameCard = game.getCardState(c, null);
-                if (c.equalsWithGameTimestamp(gameCard)) {
+                if (gameCard != null && (c.equalsWithGameTimestamp(gameCard) || (c.getId() == gameCard.getId() && !gameCard.isInPlay()))) {
                     tgtCards.add(gameCard);
                 } else if (sa.hasParam("ZoneRegardless")) {
                     tgtCards.add(c);

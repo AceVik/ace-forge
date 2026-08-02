@@ -16,7 +16,7 @@ if %jver% LEQ 16 (
 )
 
 if %jver% GEQ 17 (
-  java -Xmx4096m -Dfile.encoding=UTF-8 -jar $project.build.finalName$
+  java -Xmx8192m -Xss4m -Dfile.encoding=UTF-8 -jar $project.build.finalName$
   popd
   exit /b 0
 )

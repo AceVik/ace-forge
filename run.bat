@@ -79,7 +79,7 @@ if "%REBUILD%"=="true" (
 )
 
 :: Run Java
-set "JAVA_OPTS=-Xmx8192m -Xss4m"
+set "JAVA_OPTS=-Xmx32768m -Xss8m"
 if "%DEBUG%"=="true" (
     set "JAVA_OPTS=%JAVA_OPTS% -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=127.0.0.1:5005"
 )

@@ -1,3 +1,3 @@
 #!/bin/sh
 cd $(dirname "${0}")
-java -Xmx8192m -Xss4m $mandatory.java.args$ -jar $project.build.finalName$
+java -Xmx32768m -Xss8m $mandatory.java.args$ -jar $project.build.finalName$

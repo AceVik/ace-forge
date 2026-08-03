@@ -117,7 +117,7 @@ public final class CardRules implements ICardCharacteristics {
         String oracleText = face.getOracleText();
         // CR 903.4 colors defined by its characteristic-defining abilities
         for (String staticAbility : face.getStaticAbilities()) {
-            if (staticAbility.contains("CharacteristicDefining$ True") && staticAbility.contains("SetColor$ All")) {
+            if (staticAbility != null && staticAbility.contains("CharacteristicDefining$ True") && staticAbility.contains("SetColor$ All")) {
                 return MagicColor.ALL_COLORS;
             }
         }
@@ -687,6 +687,15 @@ public final class CardRules implements ICardCharacteristics {
             int colonPos = line.indexOf(':');
             String key = colonPos > 0 ? line.substring(0, colonPos) : line;
             String value = colonPos > 0 ? line.substring(1+colonPos).trim() : null;
+
+            if (face == null && !"Name".equals(key)) {
+                if (this.placeholderFaces != null && this.placeholderFaces.containsKey(this.curFace)) {
+                    return;
+                }
+                String faceName = (this.faces[0] != null && StringUtils.isNotBlank(this.faces[0].getName())) ? this.faces[0].getName() : "Unnamed";
+                this.faces[this.curFace] = new CardFace(faceName);
+                face = this.faces[this.curFace];
+            }
 
             if (value != null) {
                 int tokIdx = value.indexOf("TokenScript$");

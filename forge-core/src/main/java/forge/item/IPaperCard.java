@@ -48,6 +48,10 @@ public interface IPaperCard extends InventoryItem, Serializable {
 
     @Override
     default String getUntranslatedType() {
-        return getRules().getType().toString();
+        CardRules rules = getRules();
+        if (rules == null || rules.getType() == null) {
+            return "";
+        }
+        return rules.getType().toString();
     }
 }

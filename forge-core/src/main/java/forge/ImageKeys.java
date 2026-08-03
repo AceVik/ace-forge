@@ -172,6 +172,26 @@ public final class ImageKeys {
                 return f;
             }
         }
+        if (lkey.contains("muri")) {
+            File f = null;
+            if (ADVENTURE_CARD_PICS_DIR != null) {
+                f = new File(ADVENTURE_CARD_PICS_DIR, "Muri's Rule of Balance.jpg");
+                if (f == null || !f.exists()) {
+                    f = new File(ADVENTURE_CARD_PICS_DIR, "muris_rule_of_balance.jpg");
+                }
+            }
+            if (f == null || !f.exists()) {
+                f = new File("/Users/viktor/Projects/forge/forge-gui/res/adventure/common/custom_card_pics/Muri's Rule of Balance.jpg");
+            }
+            if (f == null || !f.exists()) {
+                f = new File("/Users/viktor/Projects/forge/forge-gui/res/adventure/common/custom_card_pics/muris_rule_of_balance.jpg");
+            }
+            if (f != null && f.exists()) {
+                cachedCards.put(key, f);
+                cachedCards.put(lkey, f);
+                return f;
+            }
+        }
 
         if (key.contains("AceVik Sleeve") && ADVENTURE_CARD_PICS_DIR != null) {
             File f = new File(ADVENTURE_CARD_PICS_DIR, "../sprites/enemy/humanoid/human/wizard/acevik_sleeve.png");

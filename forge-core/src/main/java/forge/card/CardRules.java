@@ -153,6 +153,9 @@ public final class CardRules implements ICardCharacteristics {
         if (placeholderFaces != null && (mainPart == null || splitType.getAggregationMethod() == CardSplitType.FaceSelectionMethod.COMBINE))
             return false; //Type line isn't fully generated, and we need it to determine if this is a variant type
         CardType t = getType();
+        if (t == null) {
+            return false;
+        }
         return t.isVanguard() || t.isScheme() || t.isPlane() || t.isPhenomenon()
                 || t.isConspiracy() || t.isDungeon() || t.isAttraction() || t.isContraption();
     }

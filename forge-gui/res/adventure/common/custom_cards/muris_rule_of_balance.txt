@@ -9,4 +9,4 @@ SVar:DBGainLife:DB$ GainLife | LifeAmount$ 5 | SpellDescription$ You gain 5 life
 SVar:DBDraw:DB$ Draw | NumCards$ 1 | SpellDescription$ Draw a card.
 SVar:DBManaAny:DB$ Mana | Produced$ Any | Amount$ 1 | SpellDescription$ Add one mana of any color.
 SVar:DBManaColorless:DB$ Mana | Produced$ C | Amount$ 2 | SpellDescription$ Add {C}{C}.
-Oracle:Shroud, indestructible, vanishing 3\n{T}, Sacrifice Muri's Rule of Balance:\nChoose one —\n    • You gain 5 life.\n    • Draw a card.\n    • Add one mana of any color.\n    • Add {C}{C}.\n„Ich geb’ ab, nichts hält mich am Hoden.“\n— Muri
+Oracle:Shroud, indestructible, vanishing 3\n{T}, Sacrifice Muri's Rule of Balance:\nChoose one —\n    • You gain 5 life.\n    • Draw a card.\n    • Add one mana of any color.\n    • Add {C}{C}.

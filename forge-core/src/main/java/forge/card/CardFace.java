@@ -130,12 +130,12 @@ final class CardFace implements ICardFace, Cloneable {
 
     // Raw fields used for Card creation
     void setNonAbilityText(String value)     { this.nonAbilityText = value; }
-    void addKeyword(String value)            { if (null == this.keywords) { this.keywords = new ArrayList<>(); } this.keywords.add(value); }
-    void addAbility(String value)            { if (null == this.abilities) { this.abilities = new ArrayList<>(); } this.abilities.add(value);}
-    void addTrigger(String value)            { if (null == this.triggers) { this.triggers = new ArrayList<>(); } this.triggers.add(value);}
-    void addDraftAction(String value)        { if (null == this.draftActions) { this.draftActions = new ArrayList<>(); } this.draftActions.add(value);}
-    void addStaticAbility(String value)      { if (null == this.staticAbilities) { this.staticAbilities = new ArrayList<>(); } this.staticAbilities.add(value);}
-    void addReplacementEffect(String value)  { if (null == this.replacements) { this.replacements = new ArrayList<>(); } this.replacements.add(value);}
+    void addKeyword(String value)            { if (null != value) { if (null == this.keywords) { this.keywords = new ArrayList<>(); } this.keywords.add(value); } }
+    void addAbility(String value)            { if (null != value) { if (null == this.abilities) { this.abilities = new ArrayList<>(); } this.abilities.add(value); } }
+    void addTrigger(String value)            { if (null != value) { if (null == this.triggers) { this.triggers = new ArrayList<>(); } this.triggers.add(value); } }
+    void addDraftAction(String value)        { if (null != value) { if (null == this.draftActions) { this.draftActions = new ArrayList<>(); } this.draftActions.add(value); } }
+    void addStaticAbility(String value)      { if (null != value) { if (null == this.staticAbilities) { this.staticAbilities = new ArrayList<>(); } this.staticAbilities.add(value); } }
+    void addReplacementEffect(String value)  { if (null != value) { if (null == this.replacements) { this.replacements = new ArrayList<>(); } this.replacements.add(value); } }
     void addSVar(String key, String value)   { if (null == this.variables) { this.variables = new TreeMap<>(String.CASE_INSENSITIVE_ORDER); } this.variables.put(key, value); }
 
 

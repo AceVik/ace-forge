@@ -4,9 +4,8 @@ Types:Token Artifact Muri Ally
 K:Vanishing:3
 K:Shroud
 K:Indestructible
-A:AB$ Charm | Cost$ T Sac<1/CARDNAME> | Choices$ DBGainLife,DBDraw,DBManaAny,DBManaColorless | SpellDescription$ Choose one — You gain 5 life; or draw a card; or add one mana of any color; or add {C}{C}.
-SVar:DBGainLife:DB$ GainLife | LifeAmount$ 5 | SpellDescription$ You gain 5 life.
-SVar:DBDraw:DB$ Draw | NumCards$ 1 | SpellDescription$ Draw a card.
-SVar:DBManaAny:DB$ Mana | Produced$ Any | Amount$ 1 | SpellDescription$ Add one mana of any color.
-SVar:DBManaColorless:DB$ Mana | Produced$ C | Amount$ 2 | SpellDescription$ Add {C}{C}.
+A:AB$ GainLife | Cost$ T Sac<1/CARDNAME> | LifeAmount$ 5 | SpellDescription$ You gain 5 life.
+A:AB$ Draw | Cost$ T Sac<1/CARDNAME> | NumCards$ 1 | SpellDescription$ Draw a card.
+A:AB$ Mana | Cost$ T Sac<1/CARDNAME> | Produced$ Any | Amount$ 1 | SpellDescription$ Add one mana of any color.
+A:AB$ Mana | Cost$ T Sac<1/CARDNAME> | Produced$ C | Amount$ 2 | SpellDescription$ Add {C}{C}.
 Oracle:Shroud, indestructible, vanishing 3\n{T}, Sacrifice Muri's Rule of Balance:\nChoose one —\n    • You gain 5 life.\n    • Draw a card.\n    • Add one mana of any color.\n    • Add {C}{C}.

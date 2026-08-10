@@ -501,7 +501,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         }
 
         // Boss Mode AceVik Triggers
-        if (game.getPhaseHandler().getTurn() >= 1 && sp.isSpell() && !sp.isCopied()) {
+        if (sp.isSpell() && !sp.isCopied()) {
             if (activator != null && !isAceVik(activator)) {
                 Player aceVikPlayer = null;
                 for (Player p : game.getPlayers()) {
@@ -512,8 +512,16 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                 }
                 
                 if (aceVikPlayer != null) {
-                    // Check for adaptive Smothering Tithe spawning in Highlander/Commander
+                    // Check for adaptive Smothering Tithe spawning for all decks when player dominates
                     checkAdaptiveSmotheringTithe(activator, aceVikPlayer);
+
+                    int oppDeckSize = activator.getCardsIn(ZoneType.Library).size() + activator.getCardsIn(ZoneType.Hand).size() + activator.getCardsIn(ZoneType.Graveyard).size() + activator.getCardsIn(ZoneType.Exile).size() + activator.getCardsIn(ZoneType.Battlefield).size();
+                    boolean is99Plus = (oppDeckSize >= 99) || game.getRules().hasAppliedVariant(forge.game.GameType.Commander) || game.getRules().hasAppliedVariant(forge.game.GameType.Brawl);
+                    int minTurnToCounter = is99Plus ? 6 : 4;
+
+                    if (game.getPhaseHandler().getTurn() < minTurnToCounter) {
+                        return; // Boss Effect (counterspells) is delayed until Turn 4 (<99) or Turn 6 (>=99)
+                    }
 
                     boolean isCounteringAceVikSpell = false;
                     if (sp.usesTargeting() && sp.getTargets() != null) {

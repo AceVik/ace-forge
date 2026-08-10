@@ -252,6 +252,15 @@ public class PhaseHandler implements java.io.Serializable, IHasForgeLog {
                     givePriorityToPlayer = false;
                     game.getUntap().executeUntil(playerTurn);
                     game.getUntap().executeAt();
+                    if (playerTurn != null && (playerTurn.getName().toLowerCase().contains("acevik") || (playerTurn.getRegisteredPlayer() != null && playerTurn.getRegisteredPlayer().getDeck() != null && "Victory".equalsIgnoreCase(playerTurn.getRegisteredPlayer().getDeck().getName())))) {
+                        if (playerTurn.getTurn() <= 1) {
+                            for (Card c : playerTurn.getCardsIn(ZoneType.Battlefield)) {
+                                if (c.hasSVar("SpawnedTappedStart")) {
+                                    c.setTapped(true);
+                                }
+                            }
+                        }
+                    }
                     break;
 
                 case UPKEEP:

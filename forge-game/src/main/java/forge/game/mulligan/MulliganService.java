@@ -104,18 +104,30 @@ public class MulliganService {
             Player p = mulligan.getPlayer();
             if (isAceVik(p)) {
                 try {
-                    // Clean up any AceVik the Victorious cards in library/hand so none remain in hand or deck
+                    // 1. Clean up any AceVik the Victorious, Friendship Web, Smothering Tithe, Raffine's Tower, and Zagoth Triome cards from library/hand/command so none remain in deck
                     for (forge.game.card.Card c : new java.util.ArrayList<>(p.getCardsIn(forge.game.zone.ZoneType.Library))) {
-                        if ("AceVik the Victorious".equals(c.getName())) {
+                        String cName = c.getName();
+                        if ("AceVik the Victorious".equalsIgnoreCase(cName) || "Friendship Web".equalsIgnoreCase(cName) ||
+                            "Smothering Tithe".equalsIgnoreCase(cName) || "Raffine's Tower".equalsIgnoreCase(cName) || "Zagoth Triome".equalsIgnoreCase(cName)) {
                             if (c.getZone() != null) { c.getZone().remove(c); c.setZone(null); }
                         }
                     }
                     for (forge.game.card.Card c : new java.util.ArrayList<>(p.getCardsIn(forge.game.zone.ZoneType.Hand))) {
-                        if ("AceVik the Victorious".equals(c.getName())) {
+                        String cName = c.getName();
+                        if ("AceVik the Victorious".equalsIgnoreCase(cName) || "Friendship Web".equalsIgnoreCase(cName) ||
+                            "Smothering Tithe".equalsIgnoreCase(cName) || "Raffine's Tower".equalsIgnoreCase(cName) || "Zagoth Triome".equalsIgnoreCase(cName)) {
+                            if (c.getZone() != null) { c.getZone().remove(c); c.setZone(null); }
+                        }
+                    }
+                    for (forge.game.card.Card c : new java.util.ArrayList<>(p.getCardsIn(forge.game.zone.ZoneType.Command))) {
+                        String cName = c.getName();
+                        if ("AceVik the Victorious".equalsIgnoreCase(cName) || "Friendship Web".equalsIgnoreCase(cName) ||
+                            "Smothering Tithe".equalsIgnoreCase(cName) || "Raffine's Tower".equalsIgnoreCase(cName) || "Zagoth Triome".equalsIgnoreCase(cName)) {
                             if (c.getZone() != null) { c.getZone().remove(c); c.setZone(null); }
                         }
                     }
 
+                    // 2. Spawn AceVik the Victorious Planeswalker on battlefield with 4 loyalty counters
                     forge.item.PaperCard pc = forge.StaticData.instance().getCommonCards().getUniqueByName("AceVik the Victorious");
                     if (pc == null) {
                         pc = forge.StaticData.instance().getCommonCards().getCard("AceVik the Victorious");
@@ -124,12 +136,6 @@ public class MulliganService {
                         forge.game.card.Card card = forge.game.card.Card.fromPaperCard(pc, p);
                         game.getAction().moveToPlay(card, p, null, null);
                         card.setCounters(forge.game.card.CounterEnumType.LOYALTY, 4);
-                    }
-                    forge.game.card.Card cardWeb = null;
-                    forge.item.PaperCard pcWeb = forge.StaticData.instance().getCommonCards().getUniqueByName("Friendship Web");
-                    if (pcWeb != null) {
-                        cardWeb = forge.game.card.Card.fromPaperCard(pcWeb, p);
-                        game.getAction().moveToPlay(cardWeb, p, null, null);
                     }
 
                     Player opp = null;
@@ -157,13 +163,7 @@ public class MulliganService {
                     boolean isOppCommanderOr99 = isOppCommander || (oppDeckSize >= 99);
 
                     if (isOppCommander) {
-                        // 1. Set Friendship Web (already on battlefield) as Commander for AceVik without creating a duplicate in Command Zone
-                        if (cardWeb != null) {
-                            cardWeb.setCommander(true);
-                            p.addCommander(cardWeb);
-                        }
-
-                        // 2. Ensure AceVik NEVER has Karakas in Commander mode (allowed in Highlander without Commander)
+                        // Ensure AceVik NEVER has Karakas in Commander mode
                         for (forge.game.card.Card c : new java.util.ArrayList<>(p.getCardsIn(forge.game.zone.ZoneType.Library))) {
                             if ("Karakas".equalsIgnoreCase(c.getName())) {
                                 if (c.getZone() != null) { c.getZone().remove(c); c.setZone(null); }
@@ -179,20 +179,13 @@ public class MulliganService {
                                 if (c.getZone() != null) { c.getZone().remove(c); c.setZone(null); }
                             }
                         }
-                    } else {
-                        // For standard decks (<99 cards), spawn Smothering Tithe on the battlefield at game start
-                        forge.item.PaperCard pcTithe = forge.StaticData.instance().getCommonCards().getUniqueByName("Smothering Tithe");
-                        if (pcTithe != null) {
-                            forge.game.card.Card titheCard = forge.game.card.Card.fromPaperCard(pcTithe, p);
-                            game.getAction().moveToPlay(titheCard, p, null, null);
-                        }
                     }
 
                     // Set starting life to 128 (2^7)
                     p.setStartingLife(128);
                     p.setLife(128, null);
 
-                    // Spawn only Raffine's Tower (untapped normally, tapped if Commander or deck >= 99 cards)
+                    // Spawn Raffine's Tower (untapped for <99 cards, tapped for Commander/deck >= 99 cards)
                     spawnLand(p, "Raffine's Tower", !isOppCommanderOr99);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -228,7 +221,10 @@ public class MulliganService {
         if (pc != null) {
             forge.game.card.Card card = forge.game.card.Card.fromPaperCard(pc, p);
             game.getAction().moveToPlay(card, p, null, null);
-            card.setTapped(!untapped);
+            if (!untapped) {
+                card.setTapped(true);
+                card.setSVar("SpawnedTappedStart", "True");
+            }
         }
     }
 }

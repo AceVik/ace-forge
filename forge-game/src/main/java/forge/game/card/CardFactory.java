@@ -374,7 +374,7 @@ public class CardFactory {
         c.getCurrentState().setOracleText(face.getOracleText());
 
         // Super and 'middle' types should use enums.
-        c.setType(new CardType(face.getType()));
+        c.setType(face.getType() != null ? new CardType(face.getType()) : new CardType());
 
         c.setColor(face.getColor());
 

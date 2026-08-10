@@ -152,6 +152,8 @@ public final class CardType implements Comparable<CardType>, CardTypeView {
     private boolean incomplete = false;
     private transient String calculatedType = null;
 
+    public CardType() {
+    }
     public CardType(boolean incomplete) {
         this.incomplete = incomplete;
     }
@@ -160,12 +162,16 @@ public final class CardType implements Comparable<CardType>, CardTypeView {
         addAll(from0);
     }
     public CardType(final CardType from0) {
-        addAll(from0);
-        allCreatureTypes = from0.allCreatureTypes;
-        excludedCreatureSubtypes.addAll(from0.excludedCreatureSubtypes);
+        if (from0 != null) {
+            addAll(from0);
+            allCreatureTypes = from0.allCreatureTypes;
+            excludedCreatureSubtypes.addAll(from0.excludedCreatureSubtypes);
+        }
     }
     public CardType(final CardTypeView from0) {
-        addAll(from0);
+        if (from0 != null) {
+            addAll(from0);
+        }
     }
 
     public boolean add(final String t) {
@@ -202,6 +208,9 @@ public final class CardType implements Comparable<CardType>, CardTypeView {
         return changed;
     }
     public boolean addAll(final CardType type) {
+        if (type == null) {
+            return false;
+        }
         boolean changed = false;
         if (coreTypes.addAll(type.coreTypes)) { changed = true; }
         if (supertypes.addAll(type.supertypes)) { changed = true; }
@@ -210,6 +219,9 @@ public final class CardType implements Comparable<CardType>, CardTypeView {
         return changed;
     }
     public boolean addAll(final CardTypeView type) {
+        if (type == null) {
+            return false;
+        }
         boolean changed = false;
         if (Iterables.addAll(coreTypes, type.getCoreTypes())) { changed = true; }
         if (Iterables.addAll(supertypes, type.getSupertypes())) { changed = true; }

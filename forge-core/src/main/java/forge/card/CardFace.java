@@ -169,6 +169,7 @@ final class CardFace implements ICardFace, Cloneable {
         if ( manaCost == null ) manaCost = ManaCost.NO_COST;
         // Most scripts do not specify color explicitly
         if ( color == null ) color = ColorSet.fromManaCost(manaCost);
+        if ( type == null ) type = new CardType();
 
         if ( keywords == null ) keywords = emptyList;
         if ( abilities == null ) abilities = emptyList;

@@ -7,7 +7,6 @@ import com.google.common.collect.Lists;
 import forge.MulliganDefs;
 import forge.StaticData;
 import forge.game.Game;
-import forge.game.GameType;
 import forge.game.player.Player;
 
 public class MulliganService {
@@ -34,7 +33,7 @@ public class MulliganService {
             whoCanMulligan.add(whoCanMulligan.remove(0));
         }
 
-        boolean firstMullFree = game.getPlayers().size() > 2 || game.getRules().hasAppliedVariant(GameType.Brawl);
+        boolean firstMullFree = true; // House rule: First mulligan is generally free for all games
 
         for (Player player : whoCanMulligan) {
             MulliganDefs.MulliganRule rule = StaticData.instance().getMulliganRule();

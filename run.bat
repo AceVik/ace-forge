@@ -8,7 +8,7 @@ cd /d "%DIR%"
 echo Pulling latest changes from fork (origin main)...
 git pull --rebase origin main || echo Warning: git pull failed, running with local version
 
-set "JAR_PATH=forge-gui-mobile-dev\target\forge-gui-mobile-dev-2.0.14-SNAPSHOT-jar-with-dependencies.jar"
+set "JAR_PATH=forge-gui-mobile-dev\target\forge-gui-mobile-dev-2.0.15-SNAPSHOT-jar-with-dependencies.jar"
 set "REBUILD=false"
 set "FORCE=false"
 set "SET_LANG="
@@ -108,4 +108,4 @@ set "JAVA_OPTS=%JAVA_OPTS% -Dio.netty.tryReflectionSetAccessible=true"
 set "JAVA_OPTS=%JAVA_OPTS% -Dfile.encoding=UTF-8"
 
 cd forge-gui-mobile-dev
-java %JAVA_OPTS% -jar target/forge-gui-mobile-dev-2.0.14-SNAPSHOT-jar-with-dependencies.jar %ARGS%
+java %JAVA_OPTS% -jar target/forge-gui-mobile-dev-2.0.15-SNAPSHOT-jar-with-dependencies.jar %ARGS%

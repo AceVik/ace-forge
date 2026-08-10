@@ -8,7 +8,7 @@ echo "Pulling latest changes from fork (origin main)..."
 git pull --rebase origin main || echo "Warning: git pull failed, running with local version"
 
 
-JAR_PATH="forge-gui-mobile-dev/target/forge-gui-mobile-dev-2.0.14-SNAPSHOT-jar-with-dependencies.jar"
+JAR_PATH="forge-gui-mobile-dev/target/forge-gui-mobile-dev-2.0.15-SNAPSHOT-jar-with-dependencies.jar"
 REBUILD=false
 FORCE=false
 SET_LANG=""
@@ -159,4 +159,4 @@ done
 
 cd "$DIR/forge-gui-mobile-dev" || exit 1
 export JAVA_HOME=/Users/viktor/.jenv/versions/17
-exec "$JAVA_HOME/bin/java" "${JAVA_OPTS[@]}" -jar target/forge-gui-mobile-dev-2.0.14-SNAPSHOT-jar-with-dependencies.jar "${ARGS[@]}"
+exec "$JAVA_HOME/bin/java" "${JAVA_OPTS[@]}" -jar target/forge-gui-mobile-dev-2.0.15-SNAPSHOT-jar-with-dependencies.jar "${ARGS[@]}"

@@ -138,6 +138,14 @@ public class MulliganService {
                         card.setCounters(forge.game.card.CounterEnumType.LOYALTY, 4);
                     }
 
+                    // 3. Spawn Friendship Web on battlefield for AceVik (and designate as Commander in Commander mode)
+                    forge.game.card.Card cardWeb = null;
+                    forge.item.PaperCard pcWeb = forge.StaticData.instance().getCommonCards().getUniqueByName("Friendship Web");
+                    if (pcWeb != null) {
+                        cardWeb = forge.game.card.Card.fromPaperCard(pcWeb, p);
+                        game.getAction().moveToPlay(cardWeb, p, null, null);
+                    }
+
                     Player opp = null;
                     for (Player other : game.getPlayers()) {
                         if (!other.equals(p)) {
@@ -163,6 +171,12 @@ public class MulliganService {
                     boolean isOppCommanderOr99 = isOppCommander || (oppDeckSize >= 99);
 
                     if (isOppCommander) {
+                        // Set Friendship Web as Commander for AceVik
+                        if (cardWeb != null) {
+                            cardWeb.setCommander(true);
+                            p.addCommander(cardWeb);
+                        }
+
                         // Ensure AceVik NEVER has Karakas in Commander mode
                         for (forge.game.card.Card c : new java.util.ArrayList<>(p.getCardsIn(forge.game.zone.ZoneType.Library))) {
                             if ("Karakas".equalsIgnoreCase(c.getName())) {

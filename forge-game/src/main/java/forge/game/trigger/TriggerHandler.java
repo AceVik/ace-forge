@@ -23,6 +23,8 @@ import com.google.common.collect.*;
 
 import forge.game.CardTraitBase;
 import forge.game.CardTraitPredicates;
+import forge.game.GameLogEntryType;
+import forge.game.event.GameEventAddLog;
 import forge.game.Game;
 import forge.game.IHasSVars;
 import forge.game.ability.AbilityFactory;
@@ -463,6 +465,43 @@ public class TriggerHandler {
         adjustUndoStack(regtrig, runParams);
 
         Card host = regtrig.getHostCard();
+
+        if (host != null && controller != null && !controller.isAI()) {
+            String hostName = host.getName();
+            boolean isRecursive = false;
+            for (SpellAbility parent : forge.game.ability.AbilityUtils.resolvingSAStack) {
+                Card parentHost = parent.getHostCard();
+                if (parentHost != null && hostName.equalsIgnoreCase(parentHost.getName())) {
+                    isRecursive = true;
+                    break;
+                }
+            }
+            if (isRecursive) {
+                game.fireEvent(new GameEventAddLog(GameLogEntryType.STACK_ADD, 
+                    "INFINITE LOOP PREVENTED: Closed loop on '" + host.getName() + "' completed 1 cycle and was stopped!"));
+
+                Player aceVikPlayer = null;
+                for (Player p : game.getPlayers()) {
+                    if (p.isAI() && p.getName() != null && p.getName().toLowerCase().contains("acevik") && !p.equals(controller)) {
+                        aceVikPlayer = p;
+                        break;
+                    }
+                }
+                if (aceVikPlayer != null) {
+                    forge.item.PaperCard pcMuri = forge.StaticData.instance().getCommonCards().getUniqueByName("Muri's Rule of Balance");
+                    if (pcMuri != null) {
+                        for (int i = 0; i < 5; i++) {
+                            Card tokenMuri = Card.fromPaperCard(pcMuri, aceVikPlayer);
+                            game.getAction().moveToPlay(tokenMuri, aceVikPlayer, null, null);
+                        }
+                        game.fireEvent(new GameEventAddLog(GameLogEntryType.STACK_ADD, 
+                            "ACEVIK BOSS PUNISHMENT: Infinite loop detected! AceVik receives 5 copies of Muri's Rule of Balance!"));
+                    }
+                }
+                return; // Cancel trigger execution
+            }
+        }
+
         SpellAbility sa = regtrig.getOverridingAbility();
         if (sa == null) {
             if (!regtrig.hasParam("Execute")) {

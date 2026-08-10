@@ -1296,38 +1296,45 @@ public class AbilityUtils {
     // BELOW ARE resolve() METHOD AND ITS DEPENDANTS, CONSIDER MOVING TO DEDICATED CLASS
     //
     /////////////////////////////////////////////////////////////////////////////////////
+    public static final java.util.ArrayDeque<SpellAbility> resolvingSAStack = new java.util.ArrayDeque<>();
+
     public static void resolve(final SpellAbility sa) {
         if (sa == null) {
             return;
         }
 
-        Player pl = sa.getActivatingPlayer();
-        final Game game = pl.getGame();
+        resolvingSAStack.push(sa);
+        try {
+            Player pl = sa.getActivatingPlayer();
+            final Game game = pl.getGame();
 
-        if (sa.isTrigger() && !sa.getTrigger().isStatic() && sa.getParent() == null) {
-            // when trigger cost are paid before the effect does resolve, need to clean the trigger
-            game.getTriggerHandler().resetActiveTriggers();
-        }
-
-        resolvePreAbilities(sa, game);
-
-        // count times ability resolves this turn
-        if (!sa.isWrapper() && sa.isAbility()) {
-            final Card host = sa.getHostCard();
-            if (host != null) {
-                host.addAbilityResolved(sa);
+            if (sa.isTrigger() && !sa.getTrigger().isStatic() && sa.getParent() == null) {
+                // when trigger cost are paid before the effect does resolve, need to clean the trigger
+                game.getTriggerHandler().resetActiveTriggers();
             }
-        }
 
-        final ApiType api = sa.getApi();
-        if (api == null) {
-            sa.resolve();
-            if (sa.getSubAbility() != null) {
-                resolve(sa.getSubAbility());
+            resolvePreAbilities(sa, game);
+
+            // count times ability resolves this turn
+            if (!sa.isWrapper() && sa.isAbility()) {
+                final Card host = sa.getHostCard();
+                if (host != null) {
+                    host.addAbilityResolved(sa);
+                }
             }
-            return;
+
+            final ApiType api = sa.getApi();
+            if (api == null) {
+                sa.resolve();
+                if (sa.getSubAbility() != null) {
+                    resolve(sa.getSubAbility());
+                }
+                return;
+            }
+            resolveApiAbility(sa, game);
+        } finally {
+            resolvingSAStack.pop();
         }
-        resolveApiAbility(sa, game);
     }
 
     private static void resolvePreAbilities(final SpellAbility sa, final Game game) {

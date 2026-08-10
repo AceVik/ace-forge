@@ -459,6 +459,13 @@ public class TriggerHandler {
     // Checks if the conditions are right for a single trigger to go off, and
     // runs it if so.
     // Return true if the trigger went off, false otherwise.
+    private static boolean isSpawningApi(forge.game.ability.ApiType api) {
+        if (api == null) return false;
+        return api == forge.game.ability.ApiType.Token || api == forge.game.ability.ApiType.CopyPermanent || 
+               api == forge.game.ability.ApiType.Clone || api == forge.game.ability.ApiType.ChangeZone || 
+               api == forge.game.ability.ApiType.Animate;
+    }
+
     private void runSingleTriggerInternal(final Trigger regtrig, final Map<AbilityKey, Object> runParams, Player controller) {
         // All tests passed, execute ability.
 
@@ -467,38 +474,46 @@ public class TriggerHandler {
         Card host = regtrig.getHostCard();
 
         if (host != null && controller != null && !controller.isAI()) {
-            String hostName = host.getName();
-            boolean isRecursive = false;
-            for (SpellAbility parent : forge.game.ability.AbilityUtils.resolvingSAStack) {
-                Card parentHost = parent.getHostCard();
-                if (parentHost != null && hostName.equalsIgnoreCase(parentHost.getName())) {
-                    isRecursive = true;
-                    break;
-                }
-            }
-            if (isRecursive) {
-                game.fireEvent(new GameEventAddLog(GameLogEntryType.STACK_ADD, 
-                    "INFINITE LOOP PREVENTED: Closed loop on '" + host.getName() + "' completed 1 cycle and was stopped!"));
+            SpellAbility saTarget = regtrig.getOverridingAbility();
+            forge.game.ability.ApiType targetApi = saTarget != null ? saTarget.getApi() : null;
 
-                Player aceVikPlayer = null;
-                for (Player p : game.getPlayers()) {
-                    if (p.isAI() && p.getName() != null && p.getName().toLowerCase().contains("acevik") && !p.equals(controller)) {
-                        aceVikPlayer = p;
-                        break;
-                    }
-                }
-                if (aceVikPlayer != null) {
-                    forge.item.PaperCard pcMuri = forge.StaticData.instance().getCommonCards().getUniqueByName("Muri's Rule of Balance");
-                    if (pcMuri != null) {
-                        for (int i = 0; i < 5; i++) {
-                            Card tokenMuri = Card.fromPaperCard(pcMuri, aceVikPlayer);
-                            game.getAction().moveToPlay(tokenMuri, aceVikPlayer, null, null);
+            // Non-spawning abilities (like PutCounter on Nesting Dovehawk, Draw, GainLife) cannot cause infinite token loops
+            if (targetApi == null || isSpawningApi(targetApi)) {
+                String hostName = host.getName();
+                boolean isRecursive = false;
+                for (SpellAbility parent : forge.game.ability.AbilityUtils.resolvingSAStack) {
+                    Card parentHost = parent.getHostCard();
+                    if (parentHost != null && hostName.equalsIgnoreCase(parentHost.getName())) {
+                        if (parent.getTrigger() == regtrig || (parent.getApi() != null && parent.getApi() == targetApi) || isSpawningApi(parent.getApi())) {
+                            isRecursive = true;
+                            break;
                         }
-                        game.fireEvent(new GameEventAddLog(GameLogEntryType.STACK_ADD, 
-                            "ACEVIK BOSS PUNISHMENT: Infinite loop detected! AceVik receives 5 copies of Muri's Rule of Balance!"));
                     }
                 }
-                return; // Cancel trigger execution
+                if (isRecursive) {
+                    game.fireEvent(new GameEventAddLog(GameLogEntryType.STACK_ADD, 
+                        "INFINITE LOOP PREVENTED: Closed loop on '" + host.getName() + "' completed 1 cycle and was stopped!"));
+
+                    Player aceVikPlayer = null;
+                    for (Player p : game.getPlayers()) {
+                        if (p.isAI() && p.getName() != null && p.getName().toLowerCase().contains("acevik") && !p.equals(controller)) {
+                            aceVikPlayer = p;
+                            break;
+                        }
+                    }
+                    if (aceVikPlayer != null) {
+                        forge.item.PaperCard pcMuri = forge.StaticData.instance().getCommonCards().getUniqueByName("Muri's Rule of Balance");
+                        if (pcMuri != null) {
+                            for (int i = 0; i < 5; i++) {
+                                Card tokenMuri = Card.fromPaperCard(pcMuri, aceVikPlayer);
+                                game.getAction().moveToPlay(tokenMuri, aceVikPlayer, null, null);
+                            }
+                            game.fireEvent(new GameEventAddLog(GameLogEntryType.STACK_ADD, 
+                                "ACEVIK BOSS PUNISHMENT: Infinite loop detected! AceVik receives 5 copies of Muri's Rule of Balance!"));
+                        }
+                    }
+                    return; // Cancel trigger execution
+                }
             }
         }
 

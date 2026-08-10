@@ -589,7 +589,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                                 }
                             }
                             float ratio = totalLands > 0 ? (float) untappedLands / totalLands : 1.0f;
-                            float pCounter = 0.50f - (ratio * 0.50f);
+                            float pCounter = 0.32f - (ratio * 0.32f);
                             if (pCounter < 0) {
                                 pCounter = 0.0f;
                             }

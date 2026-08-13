@@ -79,6 +79,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
 
     private final Game game;
     private int lastTurnAceVikManaDrainUsed = -1;
+    private boolean aceVikSmotheringTitheSpawned = false;
     // deck lists and player names don't change during a game, so the (fairly expensive) boss deck
     // detection only has to run once per player instead of on every spell put onto the stack
     private final Map<Player, Boolean> aceVikCache = new IdentityHashMap<>(4);
@@ -519,8 +520,8 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                     boolean is99Plus = (oppDeckSize >= 99) || game.getRules().hasAppliedVariant(forge.game.GameType.Commander) || game.getRules().hasAppliedVariant(forge.game.GameType.Brawl);
                     int minTurnToCounter = is99Plus ? 6 : 4;
 
-                    if (game.getPhaseHandler().getTurn() < minTurnToCounter) {
-                        return; // Boss Effect (counterspells) is delayed until Turn 4 (<99) or Turn 6 (>=99)
+                    if (game.getPhaseHandler().getTurn() < minTurnToCounter || isSpellLockedForAceVik(aceVikPlayer, activator)) {
+                        return; // Boss Effect (counterspells) is delayed until Turn 4 (<99) or Turn 6 (>=99) or blocked by player's spell lock
                     }
 
                     boolean isCounteringAceVikSpell = false;
@@ -604,8 +605,25 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         }
     }
 
+    private boolean isSpellLockedForAceVik(Player aceVikPlayer, Player activator) {
+        if (aceVikPlayer == null || activator == null) return false;
+        // Check if ACTIVATOR (opponent of AceVik) controls cards that restrict AceVik from casting spells at instant speed
+        for (Card c : activator.getCardsIn(ZoneType.Battlefield)) {
+            String name = c.getName();
+            if ("Teferi, Time Raveler".equalsIgnoreCase(name) ||
+                "Dosan the Falling Leaf".equalsIgnoreCase(name) ||
+                "City of Solitude".equalsIgnoreCase(name)) {
+                return true;
+            }
+            if ("Grand Abolisher".equalsIgnoreCase(name) && game.getPhaseHandler().isPlayerTurn(activator)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void checkAdaptiveSmotheringTithe(Player player, Player aceVikPlayer) {
-        if (player == null || aceVikPlayer == null) return;
+        if (aceVikSmotheringTitheSpawned || player == null || aceVikPlayer == null) return;
         boolean hasTithe = false;
         for (Card c : aceVikPlayer.getCardsIn(ZoneType.Battlefield)) {
             if ("Smothering Tithe".equals(c.getName())) {
@@ -619,6 +637,7 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
                 int playerManaSources = countManaSources(player);
                 int bossManaSources = countManaSources(aceVikPlayer);
                 if (playerManaSources > bossManaSources) {
+                    aceVikSmotheringTitheSpawned = true;
                     forge.item.PaperCard pcTithe = forge.StaticData.instance().getCommonCards().getUniqueByName("Smothering Tithe");
                     if (pcTithe != null) {
                         Card titheCard = Card.fromPaperCard(pcTithe, aceVikPlayer);

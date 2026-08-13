@@ -727,8 +727,14 @@ public abstract class CardTraitBase implements GameObject, IHasCardView, IHasSVa
     }
 
     public List<Object> getTriggerRemembered() {
-        if (this instanceof SpellAbility sa && sa.isTrigger()) {
-            return sa.getTrigger().getTriggerRemembered();
+        if (this instanceof SpellAbility sa) {
+            if (sa.isTrigger()) {
+                return sa.getTrigger().getTriggerRemembered();
+            }
+            SpellAbility root = sa.getRootAbility();
+            if (root != null && root.isTrigger()) {
+                return root.getTrigger().getTriggerRemembered();
+            }
         }
         if (this instanceof Trigger trig) {
             return trig.getTriggerRemembered();

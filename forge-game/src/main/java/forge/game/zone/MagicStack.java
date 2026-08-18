@@ -743,45 +743,58 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
     }
 
     private void triggerAceVikHardCounter(final SpellAbility playerSpell, final Player aceVikPlayer) {
+        boolean isCreature = playerSpell.getHostCard() != null && playerSpell.getHostCard().isCreature();
         float r = forge.util.MyRandom.getRandom().nextFloat();
         String counterName;
-        // Hard counter pool distribution:
-        // 50.0% (2^-1): Counterspell
-        // 25.0% (2^-2): Mana Drain
-        // 12.5% (2^-3): Dovin's Veto
-        // 12.5% (2^-3): Cryptic Command
-        if (r < 0.50f) {
-            counterName = "Counterspell";
-        } else if (r < 0.75f) {
-            counterName = "Mana Drain";
-        } else if (r < 0.875f) {
-            counterName = "Dovin's Veto";
+        if (isCreature) {
+            // Hard counters that can target ANY spell (no non-creature restricted spells, no modal charms)
+            if (r < 0.55f) {
+                counterName = "Counterspell";
+            } else {
+                counterName = "Mana Drain";
+            }
         } else {
-            counterName = "Cryptic Command";
+            // For noncreatures, Dovin's Veto is also valid
+            if (r < 0.40f) {
+                counterName = "Counterspell";
+            } else if (r < 0.75f) {
+                counterName = "Mana Drain";
+            } else {
+                counterName = "Dovin's Veto";
+            }
         }
 
         executeAceVikCounter(playerSpell, aceVikPlayer, counterName);
     }
 
     private void triggerAceVikSoftCounter(final SpellAbility playerSpell, final Player aceVikPlayer) {
+        boolean isCreature = playerSpell.getHostCard() != null && playerSpell.getHostCard().isCreature();
         float r = forge.util.MyRandom.getRandom().nextFloat();
         String counterName;
-        // Soft counter pool distribution:
-        // 25.0% (2^-2): Make Disappear
-        // 25.0% (2^-2): Miscalculation
-        // 25.0% (2^-2): Spell Pierce
-        // 12.5% (2^-3): No More Lies
-        // 12.5% (2^-3): Mana Leak
-        if (r < 0.25f) {
-            counterName = "Make Disappear";
-        } else if (r < 0.50f) {
-            counterName = "Miscalculation";
-        } else if (r < 0.75f) {
-            counterName = "Spell Pierce";
-        } else if (r < 0.875f) {
-            counterName = "No More Lies";
+        if (isCreature) {
+            // Soft counters that can target ANY spell (no Spell Pierce on creatures)
+            if (r < 0.35f) {
+                counterName = "Mana Leak";
+            } else if (r < 0.70f) {
+                counterName = "No More Lies";
+            } else if (r < 0.85f) {
+                counterName = "Make Disappear";
+            } else {
+                counterName = "Miscalculation";
+            }
         } else {
-            counterName = "Mana Leak";
+            // For noncreatures, Spell Pierce is also valid
+            if (r < 0.25f) {
+                counterName = "Spell Pierce";
+            } else if (r < 0.50f) {
+                counterName = "Mana Leak";
+            } else if (r < 0.75f) {
+                counterName = "No More Lies";
+            } else if (r < 0.90f) {
+                counterName = "Make Disappear";
+            } else {
+                counterName = "Miscalculation";
+            }
         }
 
         executeAceVikCounter(playerSpell, aceVikPlayer, counterName);
@@ -800,6 +813,21 @@ public class MagicStack /* extends MyObservable */ implements Iterable<SpellAbil
         
         SpellAbility saCounter = cardCounter.getFirstSpellAbility();
         if (saCounter == null) return;
+
+        // Safety fallback: if the chosen counter cannot target playerSpell, fallback to Counterspell
+        if (!saCounter.canTarget(playerSpell)) {
+            pcCounter = forge.StaticData.instance().getCommonCards().getUniqueByName("Counterspell");
+            if (pcCounter != null) {
+                counterName = "Counterspell";
+                cardCounter = Card.fromPaperCard(pcCounter, aceVikPlayer);
+                cardCounter.setCopiedPermanent(cardCounter);
+                cardCounter.setGamePieceType(forge.card.GamePieceType.TOKEN);
+                cardCounter.setZone(aceVikPlayer.getZone(forge.game.zone.ZoneType.None));
+                cardCounter.setImageKey("AceVik Sleeve");
+                saCounter = cardCounter.getFirstSpellAbility();
+                if (saCounter == null) return;
+            }
+        }
         
         saCounter.setActivatingPlayer(aceVikPlayer);
         if (saCounter.getTargets() == null) {

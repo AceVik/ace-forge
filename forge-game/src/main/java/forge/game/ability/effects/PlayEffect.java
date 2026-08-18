@@ -380,6 +380,11 @@ public class PlayEffect extends SpellAbilityEffect {
                 continue;
             }
 
+            tgtSA.setCastFromPlayEffect(true);
+            if (tgtSA.getRestrictions() != null) {
+                tgtSA.getRestrictions().setZone(null);
+            }
+
             if (!optional) {
                 // 118.8c
                 for (CostPart cost : tgtSA.getPayCosts().getCostParts()) {

@@ -438,6 +438,7 @@ public class CardFactory {
         if (from.getConditions() != null) {
             to.setConditions((SpellAbilityCondition) from.getConditions().copy());
         }
+        to.setCastFromPlayEffect(from.isCastFromPlayEffect());
 
         // do this after other abilities are copied
         if (p != null) {

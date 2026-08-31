@@ -84,4 +84,38 @@ public class ReplacementHandlerTest extends SimulationTest {
         assertTrue(creature.isTapped(),
             "Card should be tapped due to perpetual replacement effect");
     }
+
+    /**
+     * Tests that a replacement effect modifying a zone change (e.g. dying to graveyard replaced by exile)
+     * correctly preserves the permanent's gameTimestamp on the copied card so ChangeZoneEffect
+     * recognizes the card on the battlefield, removes it, and moves it to the replaced destination.
+     */
+    @Test(timeOut = 2000)
+    public void testMovedReplacementEffectPreservesTimestampAndClearsBattlefield() {
+        Game game = initAndCreateGame();
+        Player p1 = game.getPlayers().get(0);
+        Player p2 = game.getPlayers().get(1);
+
+        game.getPhaseHandler().devModeSet(PhaseType.MAIN1, p1);
+
+        // Put Kalitas, Traitor of Ghet on battlefield for p1
+        Card kalitas = createCard("Kalitas, Traitor of Ghet", p1);
+        game.getAction().moveTo(ZoneType.Battlefield, kalitas, null, null);
+
+        // Put a creature on battlefield for p2
+        Card bear = createCard("Grizzly Bears", p2);
+        game.getAction().moveTo(ZoneType.Battlefield, bear, null, null);
+
+        game.getAction().checkStateEffects(true);
+
+        assertTrue(bear.isInZone(ZoneType.Battlefield), "Bear should be on battlefield");
+
+        // Destroy the bear -> Should be replaced by exile, Kalitas triggers token creation
+        game.getAction().destroy(bear, null, false, null);
+        game.getAction().checkStateEffects(true);
+
+        assertFalse(bear.isInZone(ZoneType.Battlefield), "Bear should no longer be on battlefield");
+        assertFalse(p2.getZone(ZoneType.Graveyard).contains(bear), "Bear should not be in graveyard");
+        assertTrue(p2.getZone(ZoneType.Exile).contains(bear), "Bear should be in exile");
+    }
 }

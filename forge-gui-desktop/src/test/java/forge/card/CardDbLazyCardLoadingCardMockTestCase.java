@@ -112,4 +112,34 @@ public class CardDbLazyCardLoadingCardMockTestCase extends CardMockTestCase {
         assertEquals(dominatingLycidCard.getEdition(), expectedSetCode);
         assertEquals(dominatingLycidCard.getRarity(), expectedCardRarity);
     }
+
+    @Test
+    public void testLoadAndGetSplitCardFireIce() {
+        String cardName = "Fire // Ice";
+        PaperCard fireIce = this.cardDb.getCard(cardName);
+        assertNull(fireIce);
+
+        FModel.getMagicDb().attemptToLoadCard(cardName);
+
+        fireIce = this.cardDb.getCard(cardName);
+        assertNotNull(fireIce);
+        assertEquals(fireIce.getName(), cardName);
+        assertNotNull(fireIce.getRules());
+        assertEquals(fireIce.getRules().getSplitType(), CardSplitType.Split);
+    }
+
+    @Test
+    public void testLoadAndGetSplitCardWearTear() {
+        String cardName = "Wear // Tear";
+        PaperCard wearTear = this.cardDb.getCard(cardName);
+        assertNull(wearTear);
+
+        FModel.getMagicDb().attemptToLoadCard(cardName);
+
+        wearTear = this.cardDb.getCard(cardName);
+        assertNotNull(wearTear);
+        assertEquals(wearTear.getName(), cardName);
+        assertNotNull(wearTear.getRules());
+        assertEquals(wearTear.getRules().getSplitType(), CardSplitType.Split);
+    }
 }

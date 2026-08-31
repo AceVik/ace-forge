@@ -85,6 +85,15 @@ public class GuiDesktop implements IGuiBase {
 
     @Override
     public String getAssetsDir() {
+        if (new File("res").exists()) {
+            return "";
+        }
+        if (new File("forge-gui/res").exists()) {
+            return "forge-gui/";
+        }
+        if (new File("../forge-gui/res").exists()) {
+            return "../forge-gui/";
+        }
         return StringUtils.containsIgnoreCase(BuildInfo.getVersionString(), "git") ?
                 // FIXME: replace this hardcoded value!!
                 "../forge-gui/" : "";

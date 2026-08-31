@@ -165,14 +165,19 @@ public class CardStorageReader {
                 zipEntriesMap.put(entry.getName(), entry);
             }
         }
-
+        if (zipEntriesMap == null) {
+            return null;
+        }
         transformedName = transformedName.charAt(0) + "/" + transformedName;
         ZipEntry entry = zipEntriesMap.get(transformedName + CardStorageReader.CARD_FILE_DOT_EXTENSION);
+        if (entry == null) {
+            entry = zipEntriesMap.get("upcoming/" + transformedName + CardStorageReader.CARD_FILE_DOT_EXTENSION);
+        }
         if (entry == null) {
             // Double faced cards file naming convention currently has both names - so try to prefix match.
             // TODO: Consider changing the naming convention for DFCs.
             for (String fileName : zipEntriesMap.keySet()) {
-                if (fileName.startsWith(transformedName)) {
+                if (fileName.startsWith(transformedName) || fileName.startsWith("upcoming/" + transformedName)) {
                     entry = zipEntriesMap.get(fileName);
                     break;
                 }
@@ -182,18 +187,43 @@ public class CardStorageReader {
     }
     
     private File findFileForCard(String transformedName) {
+        if (transformedName.isEmpty()) {
+            return null;
+        }
         String folder = cardsfolder.getAbsolutePath() + "/" + transformedName.charAt(0);
         File file = new File(folder + "/" + transformedName + CardStorageReader.CARD_FILE_DOT_EXTENSION);
         if (!file.exists()) {
             file = null;
             // Double faced cards file naming convention currently has both names - so try to prefix match.
             // TODO: Consider changing the naming convention for DFCs.
-            String[] fileNames = new File(folder).list();
-            if (fileNames != null) {
-                for (String fileName : new File(folder).list()) {
-                    if (fileName.startsWith(transformedName)) {
-                        file = new File(folder, fileName);
-                        break;
+            File dir = new File(folder);
+            if (dir.exists()) {
+                String[] fileNames = dir.list();
+                if (fileNames != null) {
+                    for (String fileName : fileNames) {
+                        if (fileName.startsWith(transformedName)) {
+                            file = new File(folder, fileName);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (file == null) {
+            File upcomingFolder = new File(cardsfolder, "upcoming");
+            if (upcomingFolder.exists() && upcomingFolder.isDirectory()) {
+                File upFile = new File(upcomingFolder, transformedName + CardStorageReader.CARD_FILE_DOT_EXTENSION);
+                if (upFile.exists()) {
+                    file = upFile;
+                } else {
+                    String[] fileNames = upcomingFolder.list();
+                    if (fileNames != null) {
+                        for (String fileName : fileNames) {
+                            if (fileName.startsWith(transformedName)) {
+                                file = new File(upcomingFolder, fileName);
+                                break;
+                            }
+                        }
                     }
                 }
             }

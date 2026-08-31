@@ -420,6 +420,9 @@ public final class CardDb implements ICardDatabase, IDeckGenPool {
 
     private boolean addFromSetByName(String cardName, CardEdition ed, CardRules cr) {
         List<EditionEntry> cardsInSet = ed.getCardInSet(cardName);
+        if (cardsInSet.isEmpty() && !cardName.equals(cr.getName())) {
+            cardsInSet = ed.getCardInSet(cr.getName());
+        }
         if (cr.hasFunctionalVariants()) {
             cardsInSet = cardsInSet.stream().filter(c -> StringUtils.isEmpty(c.getFunctionalVariantName())
                     || cr.getSupportedFunctionalVariants().contains(c.getFunctionalVariantName())
@@ -456,8 +459,24 @@ public final class CardDb implements ICardDatabase, IDeckGenPool {
             reIndexNecessary |= addFromSetByName(cardName, ed, cr);
         }
 
+        if (!reIndexNecessary) {
+            if (!cr.isCustom()) {
+                if (cr.getPath() != null && cr.getPath().contains("upcoming/")) {
+                    addCard(new PaperCard(cr, CardEdition.UNKNOWN_CODE, CardRarity.Unknown));
+                    reIndexNecessary = true;
+                } else {
+                    addCard(new PaperCard(cr, CardEdition.UNKNOWN_CODE, CardRarity.Special));
+                    reIndexNecessary = true;
+                }
+            } else {
+                addCard(new PaperCard(cr, "USER", CardRarity.Special));
+                reIndexNecessary = true;
+            }
+        }
+
         if (reIndexNecessary) {
-            rulesByPrimaryName.putIfAbsent(cardName, cr); //TODO: Cache alt names here too.
+            rulesByPrimaryName.putIfAbsent(cr.getName(), cr);
+            rulesByPrimaryName.putIfAbsent(cardName, cr);
             reIndex();
         }
     }
@@ -627,7 +646,19 @@ public final class CardDb implements ICardDatabase, IDeckGenPool {
             return result;
         if (allowAltNames) {
             result = rulesByAltName.get(cardName);
-            return result;
+            if (result != null)
+                return result;
+        }
+        if (StaticData.instance() != null) {
+            StaticData.instance().attemptToLoadCard(cardName);
+            result = rulesByPrimaryName.get(cardName);
+            if (result != null)
+                return result;
+            if (allowAltNames) {
+                result = rulesByAltName.get(cardName);
+                if (result != null)
+                    return result;
+            }
         }
         return null;
     }
@@ -707,6 +738,10 @@ public final class CardDb implements ICardDatabase, IDeckGenPool {
             CardEdition edition = editions.get(reqEditionCode.toUpperCase());
 
             PaperCard cardFromSet = this.getCardFromSet(request.cardName, edition, request.artIndex, request.collectorNumber, request.isFoil);
+            if (cardFromSet == null && StaticData.instance() != null) {
+                StaticData.instance().attemptToLoadCard(request.cardName, reqEditionCode);
+                cardFromSet = this.getCardFromSet(request.cardName, edition, request.artIndex, request.collectorNumber, request.isFoil);
+            }
             if(cardFromSet != null && request.flags != null)
                 cardFromSet = cardFromSet.copyWithFlags(request.flags);
 
@@ -718,8 +753,14 @@ public final class CardDb implements ICardDatabase, IDeckGenPool {
         // So now check whether the cards exist in the DB first,
         // and select pick the card based on current SetPreference policy as a fallback
         Collection<PaperCard> cards = getAllCards(request.cardName);
-        if (cards.isEmpty())  // Never null being this a view in MultiMap
-            return null;
+        if (cards.isEmpty()) {
+            if (StaticData.instance() != null) {
+                StaticData.instance().attemptToLoadCard(request.cardName);
+                cards = getAllCards(request.cardName);
+            }
+            if (cards.isEmpty())
+                return null;
+        }
         // Either No Edition has been specified OR as a fallback in case of any error!
         // get card using the default card art preference
         String cardRequest = CardRequest.compose(request.cardName, request.isFoil);
@@ -1031,7 +1072,13 @@ public final class CardDb implements ICardDatabase, IDeckGenPool {
      */
     @Override
     public List<PaperCard> getAllCards(String cardName) {
-        return allCardsByName.get(getNormalizedName(cardName));
+        String normalized = getNormalizedName(cardName);
+        List<PaperCard> list = allCardsByName.get(normalized);
+        if (list.isEmpty() && StaticData.instance() != null) {
+            StaticData.instance().attemptToLoadCard(cardName);
+            list = allCardsByName.get(normalized);
+        }
+        return list;
     }
 
     /**

@@ -206,7 +206,7 @@ public class GameAction {
 
             copied = new CardCopyService(c).copyCard(false);
 
-            copied.setGameTimestamp(game.getNextTimestamp());
+            copied.setGameTimestamp(c.getGameTimestamp());
 
             if (zoneTo.is(ZoneType.Stack)) {
                 // try not to copy changed stats when moving to stack

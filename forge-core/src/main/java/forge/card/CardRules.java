@@ -695,7 +695,7 @@ public final class CardRules implements ICardCharacteristics {
             String key = colonPos > 0 ? line.substring(0, colonPos) : line;
             String value = colonPos > 0 ? line.substring(1+colonPos).trim() : null;
 
-            if (face == null && !"Name".equals(key)) {
+            if (face == null && !"Name".equals(key) && !"CopyFaceFrom".equals(key)) {
                 if (this.placeholderFaces != null && this.placeholderFaces.containsKey(this.curFace)) {
                     return;
                 }
@@ -744,7 +744,7 @@ public final class CardRules implements ICardCharacteristics {
                     } else if ("CopyFaceFrom".equals(key)) {
                         if (placeholderFaces == null)
                             placeholderFaces = new HashMap<>(2);
-                        assert(this.faces[this.curFace] == null);
+                        this.faces[this.curFace] = null;
                         placeholderFaces.put(this.curFace, value);
                     }
                     break;

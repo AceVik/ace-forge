@@ -293,7 +293,6 @@ public class WorldStage extends GameStage implements SaveFileContent {
                             return;
                         }
                         
->>>>>>> 24b643be0a9 (Add custom cards Strong Team and Baylee's Kiss, update AceVik starting life, rewards, and custom card drop rates, and fix custom card image resolution bugs)
                         RewardScene.instance().loadRewards(currentMob.getRewards(), RewardScene.Type.Loot, null);
                         WorldStage.this.removeEnemy(currentMob);
                         AdventureQuestController.instance().updateQuestsWin(currentMob);
